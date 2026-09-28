@@ -49,10 +49,12 @@ else
 }
 
 # ---- Step 2: Copy files ----
+# NOTE: exe/dll/manifest/assets приходят из распаковки MSIX ниже (одна копия
+# на диске). Отдельно копируем только Uninstall.ps1. 2-аргументный
+# ExtractToDirectory НЕ перезаписывает (бросает IOException при конфликте),
+# поэтому чистим назначение перед распаковкой.
 Write-Host "[2/7] Copying files..."
 New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
-Copy-Item (Join-Path $SrcDir $ExeName) (Join-Path $InstallDir $ExeName) -Force
-Copy-Item (Join-Path $SrcDir $DllName) (Join-Path $InstallDir $DllName) -Force
 Copy-Item (Join-Path $SrcDir "Uninstall.ps1") (Join-Path $InstallDir "Uninstall.ps1") -Force
 # Sparse payload: extract MSIX next to the binaries (single copy on disk).
 # NOTE: 3-arg ExtractToDirectory(overwrite) exists only on .NET Core 3.0+,
@@ -60,6 +62,8 @@ Copy-Item (Join-Path $SrcDir "Uninstall.ps1") (Join-Path $InstallDir "Uninstall.
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $stageZip = Join-Path $env:TEMP "wsg_payload.zip"
 Copy-Item (Join-Path $SrcDir $MsixName) $stageZip -Force
+Remove-Item (Join-Path $InstallDir $ExeName) -Force -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $InstallDir $DllName) -Force -ErrorAction SilentlyContinue
 Remove-Item (Join-Path $InstallDir "AppxManifest.xml") -Force -ErrorAction SilentlyContinue
 Remove-Item (Join-Path $InstallDir "Assets") -Recurse -Force -ErrorAction SilentlyContinue
 [System.IO.Compression.ZipFile]::ExtractToDirectory($stageZip, $InstallDir)
