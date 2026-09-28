@@ -17,17 +17,17 @@ jobs:
         with:
           arch: x64
 
-      - name: Configure (CMake, VS2022, x64)
-        run: cmake -B build -G "Visual Studio 17 2022" -A x64
+      - name: Configure (CMake, Ninja, x64)
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
       - name: Build Release
-        run: cmake --build build --config Release
+        run: cmake --build build
 
       - name: Verify artifacts
         shell: pwsh
         run: |
-          $exe = "build/bin/Release/GroupManager.exe"
-          $dll = "build/bin/Release/ShellExtension.dll"
+          $exe = "build/bin/GroupManager.exe"
+          $dll = "build/bin/ShellExtension.dll"
           if (!(Test-Path $exe)) { throw "Missing $exe" }
           if (!(Test-Path $dll)) { throw "Missing $dll" }
           Get-Item $exe, $dll | Format-Table Name, Length
@@ -37,5 +37,5 @@ jobs:
         with:
           name: ShortcutGrouper-bin
           path: |
-            build/bin/Release/GroupManager.exe
-            build/bin/Release/ShellExtension.dll
+            build/bin/GroupManager.exe
+            build/bin/ShellExtension.dll
