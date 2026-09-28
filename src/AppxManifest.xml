@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
+  xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
+  IgnorableNamespaces="rescap com desktop4 desktop5">
+
+  <Identity
+    Name="Win11ShortcutGrouper"
+    Publisher="CN=Win11ShortcutGrouper"
+    Version="1.0.1.0" />
+
+  <Properties>
+    <DisplayName>Win11 Shortcut Grouper</DisplayName>
+    <PublisherDisplayName>Win11ShortcutGrouper</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" />
+  </Dependencies>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+
+  <Resources>
+    <Resource Language="en-US" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+      Executable="GroupManager.exe"
+      EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="Win11 Shortcut Grouper"
+        Description="Group desktop shortcuts"
+        BackgroundColor="transparent"
+        Square44x44Logo="Assets\Square44x44Logo.png"
+        Square150x150Logo="Assets\Square150x150Logo.png">
+      </uap:VisualElements>
+      <Extensions>
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:SurrogateServer DisplayName="Win11 Shortcut Grouper">
+              <com:Class
+                Id="B5E3C5A1-7D4F-4E8B-9A2C-1F6D8E3B5A7C"
+                Path="ShellExtension.dll"
+                ThreadingModel="Both" />
+            </com:SurrogateServer>
+          </com:ComServer>
+        </com:Extension>
+        <desktop4:Extension Category="windows.fileExplorerContextMenus">
+          <desktop4:FileExplorerContextMenus>
+            <desktop5:ItemType Type=".lnk">
+              <desktop5:Verb Id="GroupShortcuts" Clsid="B5E3C5A1-7D4F-4E8B-9A2C-1F6D8E3B5A7C" />
+            </desktop5:ItemType>
+            <desktop5:ItemType Type=".url">
+              <desktop5:Verb Id="GroupShortcuts" Clsid="B5E3C5A1-7D4F-4E8B-9A2C-1F6D8E3B5A7C" />
+            </desktop5:ItemType>
+            <desktop5:ItemType Type="*">
+              <desktop5:Verb Id="GroupShortcuts" Clsid="B5E3C5A1-7D4F-4E8B-9A2C-1F6D8E3B5A7C" />
+            </desktop5:ItemType>
+            <desktop5:ItemType Type="Directory">
+              <desktop5:Verb Id="GroupShortcuts" Clsid="B5E3C5A1-7D4F-4E8B-9A2C-1F6D8E3B5A7C" />
+            </desktop5:ItemType>
+          </desktop4:FileExplorerContextMenus>
+        </desktop4:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+</Package>

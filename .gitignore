@@ -1,0 +1,44 @@
+# Build
+build/
+out/
+cmake-build-*/
+/GroupManager.exe
+
+# MSVC artifacts
+*.obj
+*.iobj
+*.ipdb
+*.pdb
+*.ilk
+*.exp
+*.lib
+!vendor/**/*.lib
+
+# MSIX / cert temp
+*.msix
+*.appx
+cert/*.pfx
+!cert/README.md
+
+# Logs
+*.log
+*.tlog
+
+# IDE
+.vs/
+.idea/
+*.VC.db
+*.VC.opendb
+*.sdf
+*.opensdf
+
+# Temp probe/test harnesses
+probe.*
+langprobe.*
+test_*
+/opencode\
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
