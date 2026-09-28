@@ -55,10 +55,14 @@ Copy-Item (Join-Path $SrcDir $ExeName) (Join-Path $InstallDir $ExeName) -Force
 Copy-Item (Join-Path $SrcDir $DllName) (Join-Path $InstallDir $DllName) -Force
 Copy-Item (Join-Path $SrcDir "Uninstall.ps1") (Join-Path $InstallDir "Uninstall.ps1") -Force
 # Sparse payload: extract MSIX next to the binaries (single copy on disk).
+# NOTE: 3-arg ExtractToDirectory(overwrite) exists only on .NET Core 3.0+,
+# Windows PowerShell 5.1 has just the 2-arg overload — clear dest first.
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $stageZip = Join-Path $env:TEMP "wsg_payload.zip"
 Copy-Item (Join-Path $SrcDir $MsixName) $stageZip -Force
-[System.IO.Compression.ZipFile]::ExtractToDirectory($stageZip, $InstallDir, $true)
+Remove-Item (Join-Path $InstallDir "AppxManifest.xml") -Force -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $InstallDir "Assets") -Recurse -Force -ErrorAction SilentlyContinue
+[System.IO.Compression.ZipFile]::ExtractToDirectory($stageZip, $InstallDir)
 Remove-Item $stageZip -Force -ErrorAction SilentlyContinue
 if (!(Test-Path (Join-Path $InstallDir "AppxManifest.xml")))
 {

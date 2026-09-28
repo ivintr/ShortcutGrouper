@@ -89,10 +89,12 @@ $($srcLines -join "`r`n")
 "@
 [IO.File]::WriteAllText($sedPath, $sed)
 
-# ---- Build (Start-Process: через & exit-код iexpress теряется) ----
+# ---- Build (успех — по факту файла: exit-код iexpress во вложенных
+# вызовах ненадёжен) ----
 if (Test-Path $SetupExe) { Remove-Item $SetupExe -Force }
-$iex = Start-Process "$env:SystemRoot\System32\iexpress.exe" -ArgumentList "/N `"$sedPath`"" -Wait -PassThru -NoNewWindow
-if ($iex.ExitCode -ne 0) { throw "iexpress failed with exit code $($iex.ExitCode)" }
+$iexpress = Join-Path $env:SystemRoot "System32\iexpress.exe"
+& $iexpress @('/N', $sedPath)
+Start-Sleep -Seconds 2
 if (!(Test-Path $SetupExe)) { throw "Setup.exe was not created." }
 
 Write-Host ""
