@@ -1,0 +1,19 @@
+# Normalize line endings on commit; checkout as-is on Windows.
+* text=auto
+
+# Windows scripts must keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.reg text eol=crlf
+
+# Visual C++ resources.
+*.rc text eol=crlf
+
+# Keep exact bytes for binaries and packages.
+*.ico binary
+*.png binary
+*.pfx binary
+*.msix binary
+*.exe binary
+*.dll binary
