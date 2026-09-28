@@ -1,4 +1,4 @@
-# Win11ShortcutGrouper
+# ShortcutGrouper
 
 A Windows 11 shell extension that adds a **"Объединить в группу"** (Group Shortcuts) button to the context menu command bar. When you select two or more `.lnk` shortcut files on the desktop, this button lets you group them into a visual folder widget.
 
@@ -38,7 +38,7 @@ Build artifacts will be in `build/bin/Release/`:
 - `ShellExtension.dll` — the COM shell extension
 - `GroupManager.exe` — the grouping application
 
-> The legacy `Win11ShortcutGrouper.sln` / `*.vcxproj` build is stale
+> The legacy `ShortcutGrouper.sln` / `*.vcxproj` build is stale
 > (references removed files, misses new ones) — use CMake.
 
 ## Installation
@@ -116,7 +116,7 @@ registers the sparse package + COM DLL, creates Start Menu shortcuts
 ## Project Structure
 
 ```
-Win11ShortcutGrouper/
+ShortcutGrouper/
 ├── CMakeLists.txt                 # The build (VS2022 generator, x64)
 ├── LICENSE
 ├── README.md
@@ -138,7 +138,7 @@ Win11ShortcutGrouper/
 │   │   ├── PopupWindow.h/cpp        # Click-to-expand popup, shell menu
 │   │   ├── SearchWindow.h/cpp       # Global shortcut search
 │   │   ├── SettingsDialog.h/cpp     # Settings UI + autostart (Run)
-│   │   ├── ModernMenu.h/cpp         # Win11-style menus
+│   │   ├── ModernMenu.h/cpp         # Windows 11-style menus
 │   │   ├── Marquee.h/cpp            # Desktop rubber-band selection
 │   │   ├── DesktopGrid.h/cpp        # Desktop icon grid probing (ListView IPC)
 │   │   ├── ColorDialog.h/cpp        # Glass color picker
@@ -227,7 +227,7 @@ A persistent background application that:
   injection + `SignTool`); legacy `tools\create_msix.cpp` is not used
 - `src\AppxManifest.xml` declares the `desktop4:ContextMenu` extension
 - Sparse package installation enables modern Windows 11 context menu integration
-- Staging lives in `%ProgramData%\Win11ShortcutGrouper\sparse` (not `%TEMP%`)
+- Staging lives in `%ProgramData%\ShortcutGrouper\sparse` (not `%TEMP%`)
 
 ## Troubleshooting
 

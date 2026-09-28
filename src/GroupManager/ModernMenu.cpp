@@ -8,7 +8,7 @@ ModernMenu* ModernMenu::s_modalRoot = nullptr;
 HHOOK ModernMenu::s_mouseHook = nullptr;
 HHOOK ModernMenu::s_kbdHook = nullptr;
 
-static const wchar_t* MENU_CLASS = L"ModernGlassMenuWin11";
+static const wchar_t* MENU_CLASS = L"ModernGlassMenu";
 
 ModernMenu::ModernMenu(WidgetRenderer* renderer) : m_renderer(renderer) {}
 
@@ -200,7 +200,7 @@ void ModernMenu::PositionIntoWorkArea(int* px, int* py, int w, int h)
     *px = x; *py = y;
 }
 
-void ModernMenu::ApplyWin11Style()
+void ModernMenu::ApplyModernStyle()
 {
     if (!m_hwnd) return;
     HMODULE hDwm = GetModuleHandleW(L"dwmapi.dll");
@@ -344,7 +344,7 @@ void ModernMenu::CreateAndShow(int x, int y, int w, int h)
         x, y, w, h, nullptr, nullptr, GetModuleHandleW(nullptr), this);
     if (!m_hwnd) return;
     SetWindowLongPtrW(m_hwnd, GWLP_USERDATA, (LONG_PTR)this);
-    ApplyWin11Style();
+    ApplyModernStyle();
     Render();
     // Позиция могла скорректироваться после замера — показываем по факту.
     ShowWindow(m_hwnd, SW_SHOWNA);

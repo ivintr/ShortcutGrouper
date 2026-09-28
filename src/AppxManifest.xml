@@ -9,13 +9,13 @@
   IgnorableNamespaces="rescap com desktop4 desktop5">
 
   <Identity
-    Name="Win11ShortcutGrouper"
-    Publisher="CN=Win11ShortcutGrouper"
+    Name="ShortcutGrouper"
+    Publisher="CN=ShortcutGrouper"
     Version="1.0.1.0" />
 
   <Properties>
-    <DisplayName>Win11 Shortcut Grouper</DisplayName>
-    <PublisherDisplayName>Win11ShortcutGrouper</PublisherDisplayName>
+    <DisplayName>Shortcut Grouper</DisplayName>
+    <PublisherDisplayName>ShortcutGrouper</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -36,7 +36,7 @@
       Executable="GroupManager.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Win11 Shortcut Grouper"
+        DisplayName="Shortcut Grouper"
         Description="Group desktop shortcuts"
         BackgroundColor="transparent"
         Square44x44Logo="Assets\Square44x44Logo.png"
@@ -45,7 +45,7 @@
       <Extensions>
         <com:Extension Category="windows.comServer">
           <com:ComServer>
-            <com:SurrogateServer DisplayName="Win11 Shortcut Grouper">
+            <com:SurrogateServer DisplayName="Shortcut Grouper">
               <com:Class
                 Id="B5E3C5A1-7D4F-4E8B-9A2C-1F6D8E3B5A7C"
                 Path="ShellExtension.dll"

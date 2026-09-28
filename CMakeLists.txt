@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(Win11ShortcutGrouper LANGUAGES CXX)
+project(ShortcutGrouper LANGUAGES CXX)
 
 # Версия пакета: единый источник для MSIX (build-sparse.ps1 -Version).
 # Бампить при каждом релизе, иначе апгрейды пакета не детектятся.

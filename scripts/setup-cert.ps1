@@ -12,7 +12,7 @@ Write-Host "=== Generating Self-Signed Certificate ===" -ForegroundColor Cyan
 
 $cert = New-SelfSignedCertificate `
     -Type CodeSigningCert `
-    -Subject "CN=Win11ShortcutGrouper" `
+    -Subject "CN=ShortcutGrouper" `
     -CertStoreLocation "Cert:\CurrentUser\My" `
     -KeyExportPolicy Exportable `
     -KeySpec Signature `

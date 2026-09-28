@@ -1,15 +1,15 @@
-# debug-menu.ps1 — Diagnostic script for Win11 Shortcut Grouper
+# debug-menu.ps1 — Diagnostic script for Shortcut Grouper
 # Checks all registration states, certificate trust, event logs.
 
 $clsid = "{B5E3C5A1-7D4F-4E8B-9A2C-1F6D8E3B5A7C}"
 
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  Win11 Shortcut Grouper — Diagnostics" -ForegroundColor Cyan
+Write-Host "  Shortcut Grouper — Diagnostics" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 
 # ---- 1. Package ----
 Write-Host "`n[1] MSIX Sparse Package" -ForegroundColor Yellow
-$pkg = Get-AppxPackage -Name "Win11ShortcutGrouper" -ErrorAction SilentlyContinue
+$pkg = Get-AppxPackage -Name "ShortcutGrouper" -ErrorAction SilentlyContinue
 if ($pkg)
 {
     Write-Host "  Status: INSTALLED" -ForegroundColor Green
@@ -137,7 +137,7 @@ else
 # ---- 5. Certificate ----
 Write-Host "`n[5] Certificate Trust" -ForegroundColor Yellow
 $certRoot = Get-ChildItem Cert:\LocalMachine\Root -CodeSigningCert -ErrorAction SilentlyContinue |
-    Where-Object { $_.Subject -like "*Win11ShortcutGrouper*" } | Select-Object -First 1
+    Where-Object { $_.Subject -like "*ShortcutGrouper*" } | Select-Object -First 1
 if ($certRoot)
 {
     Write-Host "  LocalMachine\Root: PRESENT" -ForegroundColor Green

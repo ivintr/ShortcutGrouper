@@ -104,10 +104,10 @@ STDAPI DllRegisterServer()
         L"ThreadingModel", L"Both");
     if (FAILED(hr)) return hr;
 
-    // --- shell\GroupShortcuts (Win11 command bar + legacy) ---
+    // --- shell\GroupShortcuts (Windows 11 command bar + legacy) ---
     // Регистрируем для ярлыков (lnkfile), всех файлов (*) и папок (Directory)
     const wchar_t* classes[] = { L"lnkfile", L"*", L"Directory" };
-    // Иконка нового меню Win11: наш exe рядом с DLL, иначе системная.
+    // Иконка нового меню Windows 11: наш exe рядом с DLL, иначе системная.
     std::wstring icon = L"imageres.dll,-112";
     {
         std::wstring dir = szDll;

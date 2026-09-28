@@ -1,11 +1,11 @@
-# Install.ps1 — machine installer for Win11 Shortcut Grouper.
+# Install.ps1 — machine installer for Shortcut Grouper.
 # Ships inside the IExpress Setup.exe payload (run from extraction temp dir).
 # Self-elevates: double-click friendly, UAC prompt appears once.
-# Layout: single copy in %ProgramFiles%\Win11ShortcutGrouper, sparse package
+# Layout: single copy in %ProgramFiles%\ShortcutGrouper, sparse package
 # registered with -ExternalLocation on that dir (no TEMP staging).
 
 param(
-    [string]$InstallDir = (Join-Path $env:ProgramFiles "Win11ShortcutGrouper")
+    [string]$InstallDir = (Join-Path $env:ProgramFiles "ShortcutGrouper")
 )
 
 $ErrorActionPreference = "Stop"
@@ -24,7 +24,7 @@ if (-not $isAdmin)
 $SrcDir = Split-Path -Parent $PSCommandPath
 $ExeName = "GroupManager.exe"
 $DllName = "ShellExtension.dll"
-$MsixName = "Win11ShortcutGrouper.msix"
+$MsixName = "ShortcutGrouper.msix"
 $CertName = "sparse.pfx"
 $CertPassword = if ($env:SPARSE_PFX_PASSWORD) { $env:SPARSE_PFX_PASSWORD } else { "12345" }
 
@@ -33,11 +33,11 @@ foreach ($f in @($ExeName, $DllName, $MsixName, $CertName, "Uninstall.ps1"))
     if (!(Test-Path (Join-Path $SrcDir $f))) { throw "Payload file missing: $f" }
 }
 
-Write-Host "=== Installing Win11 Shortcut Grouper ===" -ForegroundColor Cyan
+Write-Host "=== Installing Shortcut Grouper ===" -ForegroundColor Cyan
 Write-Host "Target: $InstallDir"
 
 # ---- Step 1: Remove previous installation (package + files) ----
-$oldPkg = Get-AppxPackage -Name "Win11ShortcutGrouper" -ErrorAction SilentlyContinue
+$oldPkg = Get-AppxPackage -Name "ShortcutGrouper" -ErrorAction SilentlyContinue
 if ($oldPkg)
 {
     Write-Host "[1/7] Removing previous package..."
@@ -65,7 +65,7 @@ if (!(Test-Path (Join-Path $InstallDir "AppxManifest.xml")))
     throw "MSIX extraction failed (no AppxManifest.xml in $InstallDir)"
 }
 # Legacy TEMP staging from old installs.
-$legacyTemp = Join-Path $env:TEMP "Win11ShortcutGrouper_sparse"
+$legacyTemp = Join-Path $env:TEMP "ShortcutGrouper_sparse"
 if (Test-Path $legacyTemp) { Remove-Item $legacyTemp -Recurse -Force -ErrorAction SilentlyContinue }
 Write-Host "  Files ready." -ForegroundColor Green
 
@@ -93,7 +93,7 @@ Write-Host "  Developer Mode ensured." -ForegroundColor Green
 # ---- Step 5: Register sparse package ----
 Write-Host "[5/7] Registering sparse package..."
 Add-AppxPackage -Register (Join-Path $InstallDir "AppxManifest.xml") -ExternalLocation $InstallDir -ErrorAction Stop
-$pkg = Get-AppxPackage -Name "Win11ShortcutGrouper" -ErrorAction SilentlyContinue
+$pkg = Get-AppxPackage -Name "ShortcutGrouper" -ErrorAction SilentlyContinue
 if (-not $pkg) { throw "Sparse package registration failed." }
 Write-Host "  Package: $($pkg.Name) v$($pkg.Version)" -ForegroundColor Green
 
@@ -106,10 +106,10 @@ Write-Host "  DLL registered." -ForegroundColor Green
 
 # ---- Step 7: Start Menu shortcuts + Explorer restart ----
 Write-Host "[7/7] Finishing..."
-$smDir = Join-Path $env:ProgramData "Microsoft\Windows\Start Menu\Programs\Win11 Shortcut Grouper"
+$smDir = Join-Path $env:ProgramData "Microsoft\Windows\Start Menu\Programs\Shortcut Grouper"
 New-Item -ItemType Directory -Path $smDir -Force | Out-Null
 $shell = New-Object -ComObject WScript.Shell
-$lnk = $shell.CreateShortcut((Join-Path $smDir "Win11 Shortcut Grouper.lnk"))
+$lnk = $shell.CreateShortcut((Join-Path $smDir "Shortcut Grouper.lnk"))
 $lnk.TargetPath = Join-Path $InstallDir $ExeName
 $lnk.WorkingDirectory = $InstallDir
 $lnk.Save()
@@ -133,5 +133,5 @@ if ($exp)
 
 Write-Host ""
 Write-Host "=== Installation Complete ===" -ForegroundColor Green
-Write-Host "Launch 'Win11 Shortcut Grouper' from Start Menu." -ForegroundColor Yellow
+Write-Host "Launch 'Shortcut Grouper' from Start Menu." -ForegroundColor Yellow
 Write-Host "Autostart enables itself on first launch (per user, no admin needed)." -ForegroundColor Yellow

@@ -38,7 +38,7 @@ public:
     ~ModernMenu() = default;
 
     std::vector<ModernMenuItem> items;
-    // Командная панель нового меню Win11 (верхний ряд кнопок с иконками).
+    // Командная панель нового меню Windows 11 (верхний ряд кнопок с иконками).
     // Пусто = обычное меню без панели.
     std::vector<ModernMenuItem> commands;
 
@@ -101,7 +101,7 @@ private:
     void MoveHover(int dir);
     void ActivateHovered();
     void TrackLeave();
-    void ApplyWin11Style();
+    void ApplyModernStyle();
     static void PositionIntoWorkArea(int* px, int* py, int w, int h);
 };
 

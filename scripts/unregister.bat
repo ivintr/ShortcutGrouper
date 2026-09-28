@@ -1,6 +1,6 @@
 @echo off
 echo =============================================
-echo  Win11ShortcutGrouper — Unregistration Script
+echo  ShortcutGrouper — Unregistration Script
 echo =============================================
 echo.
 

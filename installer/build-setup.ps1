@@ -13,7 +13,7 @@ $PayloadDir = Join-Path $Root "build\setup-payload"
 $InstallerDir = Join-Path $Root "installer"
 $SetupExe = Join-Path $Root "ShortcutGrouper-Setup-$Version.exe"
 
-foreach ($f in @("GroupManager.exe", "ShellExtension.dll", "Win11ShortcutGrouper.msix"))
+foreach ($f in @("GroupManager.exe", "ShellExtension.dll", "ShortcutGrouper.msix"))
 {
     if (!(Test-Path (Join-Path $BuildDir $f)))
     {
@@ -30,7 +30,7 @@ if (Test-Path $PayloadDir) { Remove-Item $PayloadDir -Recurse -Force }
 New-Item -ItemType Directory -Path $PayloadDir -Force | Out-Null
 Copy-Item (Join-Path $BuildDir "GroupManager.exe") $PayloadDir
 Copy-Item (Join-Path $BuildDir "ShellExtension.dll") $PayloadDir
-Copy-Item (Join-Path $BuildDir "Win11ShortcutGrouper.msix") $PayloadDir
+Copy-Item (Join-Path $BuildDir "ShortcutGrouper.msix") $PayloadDir
 Copy-Item $certFile (Join-Path $PayloadDir "sparse.pfx")
 Copy-Item (Join-Path $InstallerDir "Install.ps1") $PayloadDir
 Copy-Item (Join-Path $InstallerDir "Uninstall.ps1") $PayloadDir
@@ -76,7 +76,7 @@ InstallPrompt=
 DisplayLicense=
 FinishMessage=Installation finished.
 TargetName=$SetupExe
-FriendlyName=Win11 Shortcut Grouper $Version Setup
+FriendlyName=Shortcut Grouper $Version Setup
 AppLaunched=cmd.exe /c install.bat
 PostInstallCmd=<none>
 AdminQuietInstCmd=

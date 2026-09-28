@@ -12,7 +12,7 @@ $Root = Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) { throw "This script must be run as Administrator!" }
 
-$MsixPath = Join-Path $Root "build\bin\$Configuration\Win11ShortcutGrouper.msix"
+$MsixPath = Join-Path $Root "build\bin\$Configuration\ShortcutGrouper.msix"
 $StagingDir = Join-Path $Root "build\msix"
 $CertFile = Join-Path $Root "cert\sparse.pfx"
 $CertPassword = if ($env:SPARSE_PFX_PASSWORD) { $env:SPARSE_PFX_PASSWORD } else { "12345" }
@@ -20,13 +20,13 @@ $DllPath = Join-Path $Root "build\bin\$Configuration\ShellExtension.dll"
 # Стейджинг sparse-пакета — в ProgramData, а НЕ в $env:TEMP: очистка TEMP
 # (Disk Cleanup/пользователь) молча убивала и ExternalLocation пакета,
 # и exe, прописанный в автозапуске.
-$extractDir = Join-Path $env:ProgramData "Win11ShortcutGrouper\sparse"
-$legacyTempDir = Join-Path $env:TEMP "Win11ShortcutGrouper_sparse"
+$extractDir = Join-Path $env:ProgramData "ShortcutGrouper\sparse"
+$legacyTempDir = Join-Path $env:TEMP "ShortcutGrouper_sparse"
 
 if (!(Test-Path $MsixPath)) { throw "MSIX not found at $MsixPath. Run build-sparse.ps1 first." }
 if (!(Test-Path $DllPath))  { throw "DLL not found at $DllPath. Build the project first." }
 
-Write-Host "=== Installing Win11 Shortcut Grouper ===" -ForegroundColor Cyan
+Write-Host "=== Installing Shortcut Grouper ===" -ForegroundColor Cyan
 
 # ---- Step 1: Import certificate to LocalMachine\Root ----
 if (Test-Path $CertFile)
@@ -73,7 +73,7 @@ else
 
 # ---- Step 3: Uninstall old package if present ----
 Write-Host "`n[3/5] Cleaning old package..."
-$oldPkg = Get-AppxPackage -Name "Win11ShortcutGrouper" -ErrorAction SilentlyContinue
+$oldPkg = Get-AppxPackage -Name "ShortcutGrouper" -ErrorAction SilentlyContinue
 if ($oldPkg)
 {
     Remove-AppxPackage -Package $oldPkg.PackageFullName -ErrorAction SilentlyContinue
@@ -120,7 +120,7 @@ catch
 }
 
 # Verify package
-$pkg = Get-AppxPackage -Name "Win11ShortcutGrouper" -ErrorAction SilentlyContinue
+$pkg = Get-AppxPackage -Name "ShortcutGrouper" -ErrorAction SilentlyContinue
 if ($pkg)
 {
     Write-Host "  Package verified: $($pkg.Name) v$($pkg.Version)" -ForegroundColor Green

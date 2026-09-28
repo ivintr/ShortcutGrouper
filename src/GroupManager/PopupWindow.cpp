@@ -1118,7 +1118,7 @@ void PopupWindow::OnContextMenu(POINT ptScreen, bool keyboard)
 
 // Запасной вариант, если shell не отдал IContextMenu: минимум через запуск.
 // ---------------------------------------------------------------------------
-// Новое контекстное меню как в Win11 (картинка 1): командная панель сверху,
+// Новое контекстное меню как в Windows 11 (картинка 1): командная панель сверху,
 // иконки shell, хоткеи справа, подменю, системная тема. Данные — настоящие
 // глаголы shell для файла (весь список, дубли не нужны).
 // ---------------------------------------------------------------------------
@@ -1309,7 +1309,7 @@ static void BuildShellItems(ModernMenu& menu, const std::vector<ShellNode>& node
 }
 
 // Маленькая 16px иконка самого файла для пункта «Открыть»
-// (как в новом меню Win11). Возвращает HBITMAP с премультипликацией,
+// (как в новом меню Windows 11). Возвращает HBITMAP с премультипликацией,
 // удаляет вызыватель.
 static HBITMAP FileIconBitmap16(const std::wstring& path)
 {
@@ -1361,7 +1361,7 @@ static HBITMAP FileIconBitmap16(const std::wstring& path)
 static void BuildShellMenu(ModernMenu& menu, ShellMenuData& data, const ShortcutInfo& si,
     bool showUninstall)
 {
-    // Командная панель как в новом меню Win11 (подписи усечены как в оригинале).
+    // Командная панель как в новом меню Windows 11 (подписи усечены как в оригинале).
     auto addCmd = [&](int id, wchar_t glyph, const wchar_t* label, const char* verb, bool alwaysOn) {
         ModernMenuItem c;
         c.id = id;
@@ -1409,7 +1409,7 @@ static void BuildShellMenu(ModernMenu& menu, ShellMenuData& data, const Shortcut
     // NOTE: иконки ShellNode копируются по хэндлу — владение у data.icons,
     // поверхностное копирование нод безопасно.
 
-    // Иконка самого файла для «Открыть» — как в новом меню Win11.
+    // Иконка самого файла для «Открыть» — как в новом меню Windows 11.
     HBITMAP openIcon = FileIconBitmap16(si.lnkPath);
     if (openIcon) data.icons.push_back(openIcon);
     for (auto& n : ordered)
@@ -1526,7 +1526,7 @@ void PopupWindow::ShowShellMenu(int index, POINT ptScreen)
         return;
     }
 
-    // Новое меню как в Win11: командная панель сверху, иконки, хоткеи справа,
+    // Новое меню как в Windows 11: командная панель сверху, иконки, хоткеи справа,
     // подменю, тёмная тема. Данные — настоящие глаголы shell для этого файла.
     ShellMenuData data;
     data.pcm = pcm;

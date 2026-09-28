@@ -168,7 +168,7 @@ const WidgetRenderer::CachedTextFormat* WidgetRenderer::GetTextFormat(
         return &it->second;
 
     // NOTE: семейство обязано быть текстовым: пробуем сначала
-    // Segoe UI Variable Text (штатный шрифт меню Win11), затем Segoe UI.
+    // Segoe UI Variable Text (штатный шрифт меню Windows 11), затем Segoe UI.
     // L"Segoe UI Semibold" — имя начертания, а не семейства, ломает поиск.
     WCHAR locale[LOCALE_NAME_MAX_LENGTH] = L"en-US";
     GetUserDefaultLocaleName(locale, LOCALE_NAME_MAX_LENGTH);
@@ -455,7 +455,7 @@ void WidgetRenderer::DrawText(ID2D1RenderTarget* rt, const std::wstring& text,
     if (!ctf || !ctf->fmt) return;
 
     // Тень нужна только светлому тексту на стекле (виджеты/попапы).
-    // Тёмному тексту меню Win11 тень не рисуем — иначе грязь под буквами.
+    // Тёмному тексту меню Windows 11 тень не рисуем — иначе грязь под буквами.
     float lum = 0.30f * color.r + 0.59f * color.g + 0.11f * color.b;
     if (lum > 0.5f)
     {
@@ -1375,7 +1375,7 @@ SIZE WidgetRenderer::MeasureMenu(const std::vector<MenuRenderItem>& commands,
     SIZE sz = { 180, MENU_PAD * 2 };
     if (!m_dwriteFactory) return sz;
 
-    // Win11: пункты 14px, шапка 12px semibold, хоткеи и подписи панели 12px.
+    // Windows 11: пункты 14px, шапка 12px semibold, хоткеи и подписи панели 12px.
     const CachedTextFormat* ctf = GetTextFormat(14.0f, false,
         DWRITE_TEXT_ALIGNMENT_LEADING, false);
     const CachedTextFormat* ctfTitle = GetTextFormat(12.0f, true,
@@ -1449,7 +1449,7 @@ SIZE WidgetRenderer::MeasureMenu(const std::vector<MenuRenderItem>& commands,
         }
     }
 
-    // Win11-отступы: 12px по бокам, слот иконки 24px, галка/свотч 28px,
+    // Windows 11-отступы: 12px по бокам, слот иконки 24px, галка/свотч 28px,
     // зона хоткея +16px, шеврон 32px.
     int leftGutter = 12 + (hasIcon ? 24 : 0) + ((hasCheck || hasSwatch) ? 28 : 0);
     int w = leftGutter + (int)(maxW + 0.5f) +
@@ -1458,7 +1458,7 @@ SIZE WidgetRenderer::MeasureMenu(const std::vector<MenuRenderItem>& commands,
     int minW = commands.empty() ? 180 : MENU_CMD_MIN_W;
     if (w < minW) w = minW;
     if (w > 380) w = 380;
-    // Мягкая тень Win11: поля вокруг контента.
+    // Мягкая тень Windows 11: поля вокруг контента.
     sz.cx = w + MENU_SHADOW * 2;
     sz.cy += MENU_SHADOW * 2;
     return sz;
@@ -1504,7 +1504,7 @@ RenderedBitmap WidgetRenderer::RenderMenu(const std::vector<MenuRenderItem>& com
     rt->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
     rt->Clear(D2D1::ColorF(0, 0, 0, 0));
 
-    // --- Мягкая тень Win11: три падающих слоя вокруг контента ---
+    // --- Мягкая тень Windows 11: три падающих слоя вокруг контента ---
     {
         struct ShadowLayer { float inset; float alpha; };
         static const ShadowLayer layers[] = { { 2, 0.030f }, { 6, 0.055f }, { 10, 0.095f } };
@@ -1525,7 +1525,7 @@ RenderedBitmap WidgetRenderer::RenderMenu(const std::vector<MenuRenderItem>& com
 
     D2D1_RECT_F menuRect = D2D1::RectF(SH, SH, (float)w - SH, (float)h - SH);
 
-    // --- Фон Win11 Fluent: frosted acrylic + непрозрачная вуаль ---
+    // --- Фон Windows 11 Fluent: frosted acrylic + непрозрачная вуаль ---
     // Светлая: почти непрозрачный #F9F9F9, тёмная: #2C2C2C.
     {
         ID2D1RoundedRectangleGeometry* rrg = nullptr;
@@ -1555,7 +1555,7 @@ RenderedBitmap WidgetRenderer::RenderMenu(const std::vector<MenuRenderItem>& com
                 }
             }
 
-            // Win11 acrylic veil: светлая плотнее для читаемости тёмного текста.
+            // Windows 11 acrylic veil: светлая плотнее для читаемости тёмного текста.
             D2D1_COLOR_F veil = dark ? ColorF(0.17f, 0.17f, 0.18f, 0.82f)
                                      : ColorF(0.976f, 0.976f, 0.976f, 0.82f);
             ID2D1SolidColorBrush* veilBrush = nullptr;
@@ -1577,7 +1577,7 @@ RenderedBitmap WidgetRenderer::RenderMenu(const std::vector<MenuRenderItem>& com
         }
     }
 
-    // --- Рамка Win11 flyout ---
+    // --- Рамка Windows 11 flyout ---
     DrawRoundedRect(rt, menuRect, (float)MENU_RADIUS, ColorF(0, 0, 0, 0),
         dark ? ColorF(0.0f, 0.0f, 0.0f, 0.45f) : ColorF(0.0f, 0.0f, 0.0f, 0.10f), 1.0f);
     D2D1_RECT_F inner = D2D1::RectF(SH + 1.0f, SH + 1.0f,
@@ -1604,7 +1604,7 @@ RenderedBitmap WidgetRenderer::RenderMenu(const std::vector<MenuRenderItem>& com
     float textX = 12.0f + (hasIcon ? 24.0f : 0.0f) + ((hasCheck || hasSwatch) ? 28.0f : 0.0f);
     float arrowW = hasArrow ? 32.0f : 0.0f;
 
-    // Палитра Win11.
+    // Палитра Windows 11.
     const D2D1_COLOR_F colText      = dark ? ColorF(1, 1, 1, 1)
                                            : ColorF(0.106f, 0.106f, 0.106f, 1); // #1B1B1B
     const D2D1_COLOR_F colDisabled  = dark ? ColorF(1, 1, 1, 0.38f)
@@ -1727,7 +1727,7 @@ RenderedBitmap WidgetRenderer::RenderMenu(const std::vector<MenuRenderItem>& com
             rt->CreateSolidColorBrush(i == pressed ? colPressed : colHover, &hoverBrush);
             if (hoverBrush)
             {
-                // Win11 hover-пилюля 4px, отступ 4px по бокам.
+                // Windows 11 hover-пилюля 4px, отступ 4px по бокам.
                 D2D1_ROUNDED_RECT hrr = D2D1::RoundedRect(
                     D2D1::RectF(4, (float)y + 1, (float)(cw - 4), (float)(y + MENU_ITEM_H - 1)),
                     4, 4);
@@ -1766,7 +1766,7 @@ RenderedBitmap WidgetRenderer::RenderMenu(const std::vector<MenuRenderItem>& com
 
         if (it.checked)
         {
-            // Векторная галка Win11; на светлых свотчах — тёмная.
+            // Векторная галка Windows 11; на светлых свотчах — тёмная.
             D2D1_COLOR_F checkCol = colCheck;
             if (it.swatch >= 0)
             {
@@ -1808,7 +1808,7 @@ RenderedBitmap WidgetRenderer::RenderMenu(const std::vector<MenuRenderItem>& com
         float shortW = 0.0f;
         if (!it.shortcut.empty())
         {
-            // Хоткей справа серым, как в новом меню Win11.
+            // Хоткей справа серым, как в новом меню Windows 11.
             shortW = MeasureTextWidth(it.shortcut, 12.0f, false);
             D2D1_RECT_F shortRect = D2D1::RectF(textRight - shortW, (float)y,
                 textRight, (float)(y + MENU_ITEM_H));
@@ -1844,7 +1844,7 @@ RenderedBitmap WidgetRenderer::RenderMenu(const std::vector<MenuRenderItem>& com
 
         if (it.hasSubmenu)
         {
-            // Шеврон Fluent (как в новом меню Win11), а не текстовый ›.
+            // Шеврон Fluent (как в новом меню Windows 11), а не текстовый ›.
             if (m_menuChevronFmt)
             {
                 ID2D1SolidColorBrush* chBrush = nullptr;

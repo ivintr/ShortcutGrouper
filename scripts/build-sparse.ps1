@@ -10,8 +10,8 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent
 $BuildDir = Join-Path $Root "build\bin\$Configuration"
 $MsixDir = Join-Path $Root "build\msix"
-$MsixPath = Join-Path $BuildDir "Win11ShortcutGrouper.msix"
-$MsixUnsigned = Join-Path $BuildDir "Win11ShortcutGrouper_unsigned.msix"
+$MsixPath = Join-Path $BuildDir "ShortcutGrouper.msix"
+$MsixUnsigned = Join-Path $BuildDir "ShortcutGrouper_unsigned.msix"
 $CertFile = Join-Path $Root "cert\sparse.pfx"
 $CertPassword = if ($env:SPARSE_PFX_PASSWORD) { $env:SPARSE_PFX_PASSWORD } else { "12345" }
 
@@ -84,7 +84,7 @@ try
     $sr = New-Object System.IO.StreamReader($entry.Open(), [System.Text.Encoding]::UTF8)
     $vText = $sr.ReadToEnd()
     $sr.Close()
-    if (-not $vText.Contains("Win11ShortcutGrouper") -or
+    if (-not $vText.Contains("ShortcutGrouper") -or
         -not $vText.Contains("desktop4:Extension") -or
         -not $vText.Contains("Version=`"$Version`""))
     {

@@ -81,7 +81,7 @@ static void GetGroupManagerIconPath(WCHAR* out, DWORD cch)
     WCHAR exe[32768] = {};
     if (FAILED(StringCchPrintfW(exe, ARRAYSIZE(exe), L"%s\\GroupManager.exe,0", dir.c_str())))
         return;
-    // Иконка из нашего exe — в командной панели Win11 выглядит нативно.
+    // Иконка из нашего exe — в командной панели Windows 11 выглядит нативно.
     // Если exe рядом нет (только DLL), откатываемся на системную.
     std::wstring exeOnly = dir + L"\\GroupManager.exe";
     if (GetFileAttributesW(exeOnly.c_str()) == INVALID_FILE_ATTRIBUTES)
@@ -161,7 +161,7 @@ IFACEMETHODIMP GroupCommand::Invoke(IShellItemArray* psiArray, IBindCtx*)
 IFACEMETHODIMP GroupCommand::GetFlags(EXPCMDFLAGS* pFlags)
 {
     if (!pFlags) return E_POINTER;
-    // ECF_DEFAULT: верхняя командная панель нового меню Win11,
+    // ECF_DEFAULT: верхняя командная панель нового меню Windows 11,
     // а не только "Показать дополнительные параметры".
     *pFlags = ECF_DEFAULT;
     return S_OK;

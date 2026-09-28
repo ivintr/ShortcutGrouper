@@ -1,6 +1,6 @@
 @echo off
 echo =============================================
-echo  Win11ShortcutGrouper — Registration Script
+echo  ShortcutGrouper — Registration Script
 echo =============================================
 echo.
 

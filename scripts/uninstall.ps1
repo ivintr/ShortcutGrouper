@@ -6,10 +6,10 @@ $ErrorActionPreference = "Stop"
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) { throw "This script must be run as Administrator!" }
 
-Write-Host "=== Uninstalling Win11 Shortcut Grouper ===" -ForegroundColor Cyan
+Write-Host "=== Uninstalling Shortcut Grouper ===" -ForegroundColor Cyan
 
 # Remove AppxPackage
-$pkg = Get-AppxPackage -Name "Win11ShortcutGrouper" -ErrorAction SilentlyContinue
+$pkg = Get-AppxPackage -Name "ShortcutGrouper" -ErrorAction SilentlyContinue
 if ($pkg)
 {
     Remove-AppxPackage -Package $pkg.PackageFullName -ErrorAction SilentlyContinue
@@ -20,7 +20,7 @@ if ($pkg)
 # but old versions left extra keys — remove them explicitly too.
 $dllCandidates = @(
     (Join-Path $PSScriptRoot "..\build\bin\Release\ShellExtension.dll"),
-    (Join-Path ${env:ProgramFiles} "Win11ShortcutGrouper\ShellExtension.dll")
+    (Join-Path ${env:ProgramFiles} "ShortcutGrouper\ShellExtension.dll")
 )
 $dll = $dllCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($dll)
@@ -71,15 +71,15 @@ Write-Host "Autostart removed." -ForegroundColor Green
 foreach ($store in @("Cert:\LocalMachine\Root", "Cert:\CurrentUser\Root"))
 {
     Get-ChildItem $store -ErrorAction SilentlyContinue |
-        Where-Object { $_.Subject -like "*CN=Win11ShortcutGrouper*" } |
+        Where-Object { $_.Subject -like "*CN=ShortcutGrouper*" } |
         ForEach-Object { Remove-Item "$store\$($_.Thumbprint)" -ErrorAction SilentlyContinue }
 }
 Write-Host "Certificate removed (subject match)." -ForegroundColor Green
 
 # Clean staging: current (ProgramData) + legacy TEMP location.
-$stageDir = Join-Path $env:ProgramData "Win11ShortcutGrouper\sparse"
+$stageDir = Join-Path $env:ProgramData "ShortcutGrouper\sparse"
 if (Test-Path $stageDir) { Remove-Item $stageDir -Recurse -Force }
-$legacyTemp = Join-Path $env:TEMP "Win11ShortcutGrouper_sparse"
+$legacyTemp = Join-Path $env:TEMP "ShortcutGrouper_sparse"
 if (Test-Path $legacyTemp) { Remove-Item $legacyTemp -Recurse -Force }
 Write-Host "Staging cleaned." -ForegroundColor Green
 

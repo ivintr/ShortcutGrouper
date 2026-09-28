@@ -986,7 +986,7 @@ static LRESULT CALLBACK BtnSubclassProc(HWND h, UINT m, WPARAM w, LPARAM l,
     return DefSubclassProc(h, m, w, l);
 }
 
-// Кнопка в стиле Win11 primary: акцентная заливка, белый текст,
+// Кнопка в стиле Windows 11 primary: акцентная заливка, белый текст,
 // светлое кольцо фокуса вместо классического пунктира.
 static void PaintFluentButton(const DRAWITEMSTRUCT* di, SettingsWnd* st)
 {
@@ -1041,7 +1041,7 @@ static void PaintFluentButton(const DRAWITEMSTRUCT* di, SettingsWnd* st)
     SelectObject(hdc, of);
 }
 
-// Кнопка списка (выбор размера сетки) в стиле Win11: заливка/рамка под тему,
+// Кнопка списка (выбор размера сетки) в стиле Windows 11: заливка/рамка под тему,
 // текущее значение слева, стрелка справа, акцентное кольцо фокуса.
 static void PaintComboButton(HDC hdc, const SettingsRowUi& r, const wchar_t* value,
     bool hover, bool pressed, bool focused, bool dark, COLORREF accent, HFONT hFont)

@@ -1,5 +1,5 @@
-# Uninstall.ps1 — removes Win11 Shortcut Grouper installed by Setup.exe.
-# Installed to %ProgramFiles%\Win11ShortcutGrouper with a Start Menu shortcut.
+# Uninstall.ps1 — removes Shortcut Grouper installed by Setup.exe.
+# Installed to %ProgramFiles%\ShortcutGrouper with a Start Menu shortcut.
 # Self-elevates. Safe to delete its own directory at the end: PowerShell
 # parses the whole script before executing it.
 
@@ -18,14 +18,14 @@ if (-not $isAdmin)
     exit $LASTEXITCODE
 }
 
-Write-Host "=== Uninstalling Win11 Shortcut Grouper ===" -ForegroundColor Cyan
+Write-Host "=== Uninstalling Shortcut Grouper ===" -ForegroundColor Cyan
 
 # Stop the app (otherwise exe/dll are locked).
 Get-Process GroupManager -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 
 # Remove AppxPackage.
-$pkg = Get-AppxPackage -Name "Win11ShortcutGrouper" -ErrorAction SilentlyContinue
+$pkg = Get-AppxPackage -Name "ShortcutGrouper" -ErrorAction SilentlyContinue
 if ($pkg)
 {
     Remove-AppxPackage -Package $pkg.PackageFullName -ErrorAction SilentlyContinue
@@ -64,13 +64,13 @@ Write-Host "Autostart removed." -ForegroundColor Green
 foreach ($store in @("Cert:\LocalMachine\Root", "Cert:\CurrentUser\Root"))
 {
     Get-ChildItem $store -ErrorAction SilentlyContinue |
-        Where-Object { $_.Subject -like "*CN=Win11ShortcutGrouper*" } |
+        Where-Object { $_.Subject -like "*CN=ShortcutGrouper*" } |
         ForEach-Object { Remove-Item "$store\$($_.Thumbprint)" -ErrorAction SilentlyContinue }
 }
 Write-Host "Certificate removed." -ForegroundColor Green
 
 # Remove Start Menu folder.
-$smDir = Join-Path $env:ProgramData "Microsoft\Windows\Start Menu\Programs\Win11 Shortcut Grouper"
+$smDir = Join-Path $env:ProgramData "Microsoft\Windows\Start Menu\Programs\Shortcut Grouper"
 if (Test-Path $smDir) { Remove-Item $smDir -Recurse -Force }
 Write-Host "Start Menu cleaned." -ForegroundColor Green
 

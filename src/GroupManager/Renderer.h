@@ -36,7 +36,7 @@ public:
 
     int HitTestPopup(const GroupData& group, int mouseX, int mouseY, int scrollY = 0);
 
-    // Modern glass menu (Win11 Fluent style). Item metrics shared with ModernMenu.
+    // Modern glass menu (Windows 11 Fluent style). Item metrics shared with ModernMenu.
     struct MenuRenderItem {
         std::wstring text;
         bool checked = false;
@@ -56,7 +56,7 @@ public:
     static const int MENU_RADIUS = 8;
     static const int MENU_CMD_H = 66; // высота командной панели нового меню
     static const int MENU_CMD_MIN_W = 300; // мин. ширина меню с панелью
-    static const int MENU_SHADOW = 14; // мягкая тень Win11 вокруг меню
+    static const int MENU_SHADOW = 14; // мягкая тень Windows 11 вокруг меню
     SIZE MeasureMenu(const std::vector<MenuRenderItem>& items);
     SIZE MeasureMenu(const std::vector<MenuRenderItem>& commands,
         const std::vector<MenuRenderItem>& items);
