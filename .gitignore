@@ -3,6 +3,7 @@ build/
 out/
 cmake-build-*/
 /GroupManager.exe
+ShortcutGrouper-Setup-*.exe
 
 # MSVC artifacts
 *.obj

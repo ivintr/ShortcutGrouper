@@ -43,7 +43,18 @@ Build artifacts will be in `build/bin/Release/`:
 
 ## Installation
 
-### Option A: MSIX Sparse Package (Recommended)
+### Option A: Setup.exe (Recommended)
+
+```powershell
+.\installer\build-setup.ps1 -Version 1.0.1.0
+```
+
+Produces `ShortcutGrouper-Setup-<version>.exe` (IExpress self-extractor,
+no extra tools needed). Run it: installs to `%ProgramFiles%`,
+registers the sparse package + COM DLL, creates Start Menu shortcuts
+(incl. Uninstall). UAC prompt appears once.
+
+### Option B: MSIX Sparse Package
 
 1. Generate a self-signed certificate:
    ```powershell
@@ -86,7 +97,7 @@ Build artifacts will be in `build/bin/Release/`:
 
 ## Uninstallation
 
-### Option A: MSIX Sparse Package
+### Option B: MSIX Sparse Package
 
 ```powershell
 .\scripts\uninstall.ps1
@@ -165,6 +176,11 @@ Win11ShortcutGrouper/
     ├── install-sparse.ps1           # Full installer (cert + sparse + COM)
     ├── uninstall.ps1                # Clean uninstaller
     └── debug-menu.ps1               # Diagnostic checks (incl. autostart)
+└── installer/
+    ├── Install.ps1                  # Setup payload: Program Files install
+    ├── Uninstall.ps1                # Setup payload: clean removal
+    ├── install.bat                  # Setup entry point (self-elevates)
+    └── build-setup.ps1              # Assembles Setup.exe via IExpress
 ```
 
 > The project builds with CMake only (VS2022 opens `CMakeLists.txt` natively

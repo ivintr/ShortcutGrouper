@@ -1,8 +1,5 @@
-# build-sparse.ps1 — Build MSIX via OPC API (bypasses MakeAppx schema validation)
-#
-# Strategy: MakeAppx creates a structurally valid MSIX (minimal manifest),
-# then we replace AppxManifest.xml with the full manifest containing
-# desktop4:Extension for context menus. SignTool then signs the result.
+# build-sparse.ps1 — Build MSIX with full manifest (desktop4/desktop5 verbs)
+# via MakeAppx /nv, then SignTool. No OPC post-processing.
 
 param(
     [string]$Configuration = "Release",
