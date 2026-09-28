@@ -38,6 +38,13 @@ enum class Str
     W_LaunchFailMsg,  // %s — путь, %d — код ShellExecute
     W_LaunchFailCaption,
     W_ShellVerbFail,  // %s — имя команды (cut/copy/delete)
+    // Автообновление
+    U_AvailTitle,
+    U_AvailMsg,       // %s — новая версия
+    U_UptodateTitle,
+    U_UptodateMsg,
+    U_NetFailMsg,
+    U_DownFailMsg,
     W_PrunedTitle,
     W_PrunedMsg,        // %s — имя группы
     W_PrunedMany,       // %d — число ярлыков
@@ -72,6 +79,7 @@ enum class Str
     T_HideWidgets,
     T_ShowWidgets,
     T_Settings,
+    T_Update,         // проверить обновления / скачать и установить
     T_Exit,
     // Настройки
     S_Title,

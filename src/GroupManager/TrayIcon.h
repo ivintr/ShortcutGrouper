@@ -6,6 +6,7 @@
 #define IDM_REFRESH   1003
 #define IDM_SEARCH    1004
 #define IDM_TOGGLE_VIS 1005
+#define IDM_UPDATE    1006
 
 class WidgetRenderer;
 

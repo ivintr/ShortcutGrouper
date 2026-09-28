@@ -17,6 +17,7 @@
 #include "BlurHelper.h"
 #include "TrayIcon.h"
 #include "SettingsDialog.h"
+#include "Updater.h"
 #include "Lang.h"
 
 #pragma comment(lib, "Comctl32.lib")
@@ -300,6 +301,12 @@ static LRESULT CALLBACK IpcWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
         {
             g_manager.RefreshWidgets();
         }
+        else if (id == IDM_UPDATE)
+        {
+            // Обновление известно — ставим; иначе проверяем прямо сейчас.
+            if (!Updater::InstallUpdate(g_hIpcWnd))
+                Updater::CheckAsync(true);
+        }
         else if (id == IDM_EXIT)
         {
             // Remove трея — в WM_DESTROY, здесь только закрываем окно.
@@ -582,6 +589,7 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR lpCmdLine, int)
 
     // Менеджеру — окно для баллунов трея (уведомления из логики).
     g_manager.SetNotifyWindow(g_hIpcWnd);
+    Updater::SetNotifyWindow(g_hIpcWnd);
 
     // Глобальные хоткеи из настроек (тихо пропускаем занятые комбинации).
     ApplyAppHotkeys();
@@ -632,6 +640,8 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR lpCmdLine, int)
     }
 
     DebugLog(L"Entering message loop");
+    // Фоновая проверка обновлений (троттлинг сутки — внутри Updater).
+    Updater::CheckAsync();
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0))
     {

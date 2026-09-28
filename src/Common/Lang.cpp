@@ -98,6 +98,12 @@ const wchar_t* Lang::Russian(Str id)
     case Str::W_LaunchFailMsg:    return L"Не удалось запустить «%s».\nКод ошибки: %d.";
     case Str::W_LaunchFailCaption: return L"Ошибка запуска";
     case Str::W_ShellVerbFail:    return L"Не удалось выполнить команду «%s».";
+    case Str::U_AvailTitle:       return L"Доступно обновление";
+    case Str::U_AvailMsg:         return L"Вышла версия %s. Откройте меню трея, чтобы скачать и установить.";
+    case Str::U_UptodateTitle:    return L"Обновления";
+    case Str::U_UptodateMsg:      return L"У вас последняя версия.";
+    case Str::U_NetFailMsg:       return L"Не удалось проверить обновления (нет сети?).";
+    case Str::U_DownFailMsg:      return L"Не удалось скачать или запустить обновление.";
     case Str::W_PrunedTitle:       return L"Группа убрана со стола";
     case Str::W_PrunedMsg:         return L"«%s»: все ярлыки битые, группа удалена.";
     case Str::W_PrunedMany:        return L"Убрано битых ярлыков: %d (пустые группы удалены).";
@@ -129,6 +135,7 @@ const wchar_t* Lang::Russian(Str id)
     case Str::T_Search:   return L"Поиск…";
     case Str::T_HideWidgets: return L"Скрыть виджеты";
     case Str::T_ShowWidgets: return L"Показать виджеты";    case Str::T_Settings: return L"Настройки…";
+    case Str::T_Update:   return L"Проверить обновления";
     case Str::T_Exit:     return L"Выход";
     case Str::S_Title:    return L"Настройки";
     case Str::S_General:  return L"Общие";
@@ -209,6 +216,12 @@ const wchar_t* Lang::English(Str id)
     case Str::W_LaunchFailMsg:    return L"Failed to launch “%s”.\nError code: %d.";
     case Str::W_LaunchFailCaption: return L"Launch failed";
     case Str::W_ShellVerbFail:    return L"Failed to run the “%s” command.";
+    case Str::U_AvailTitle:       return L"Update available";
+    case Str::U_AvailMsg:         return L"Version %s is out. Open the tray menu to download and install it.";
+    case Str::U_UptodateTitle:    return L"Updates";
+    case Str::U_UptodateMsg:      return L"You have the latest version.";
+    case Str::U_NetFailMsg:       return L"Could not check for updates (offline?).";
+    case Str::U_DownFailMsg:      return L"Failed to download or launch the update.";
     case Str::W_PrunedTitle:       return L"Group removed from desktop";
     case Str::W_PrunedMsg:         return L"“%s”: all shortcuts are broken, the group was removed.";
     case Str::W_PrunedMany:        return L"Removed %d dead shortcuts (empty groups deleted).";
@@ -241,6 +254,7 @@ const wchar_t* Lang::English(Str id)
     case Str::T_HideWidgets: return L"Hide widgets";
     case Str::T_ShowWidgets: return L"Show widgets";
     case Str::T_Settings: return L"Settings…";
+    case Str::T_Update:   return L"Check for updates";
     case Str::T_Exit:     return L"Exit";
     case Str::S_Title:    return L"Settings";
     case Str::S_General:  return L"General";

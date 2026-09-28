@@ -1,5 +1,7 @@
 # ShortcutGrouper
 
+![build](https://github.com/ivintr/ShortcutGrouper/actions/workflows/build.yml/badge.svg)
+
 A Windows 11 shell extension that adds a **"Объединить в группу"** (Group Shortcuts) button to the context menu command bar. When you select two or more `.lnk` shortcut files on the desktop, this button lets you group them into a visual folder widget.
 
 ## Features
@@ -9,6 +11,7 @@ A Windows 11 shell extension that adds a **"Объединить в группу
 - **Draggable widgets** — reposition widgets anywhere on the desktop; positions are saved
 - **Click-to-expand popup** — click a widget to see the full shortcut list; click an item to launch it
 - **System tray icon** — persistent background process with tray icon for refresh, settings, and exit
+- **Auto-update** — checks GitHub Releases (max once a day), tray menu offers download & install
 - **Acrylic blur effects** — modern Windows visual effects via `SetWindowCompositionAttribute`
 - **Direct2D/DirectWrite rendering** — custom hardware-accelerated rendering engine
 - **IPC single instance** — second launches send commands to the running instance
@@ -93,7 +96,10 @@ registers the sparse package + COM DLL, creates Start Menu shortcuts
 
 ### Tray Icon
 
-- Right-click the tray icon to access **Refresh widgets**, **Settings**, or **Exit**.
+- Right-click the tray icon to access **Refresh widgets**, **Settings**, **Check for updates**, or **Exit**.
+- The app checks GitHub Releases for updates at most once a day. When a new
+  version is found, a tray balloon appears; **Check for updates** downloads the
+  Setup.exe to `%TEMP%`, launches it, and exits the app for the update.
 
 ## Uninstallation
 

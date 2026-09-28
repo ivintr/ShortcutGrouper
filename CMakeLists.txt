@@ -65,6 +65,7 @@ add_executable(GroupManager WIN32
     src/GroupManager/WidgetManager.cpp
     src/GroupManager/TrayIcon.cpp
     src/GroupManager/UninstallHelper.cpp
+    src/GroupManager/Updater.cpp
     src/GroupManager/SettingsDialog.cpp
     src/GroupManager/SearchWindow.cpp
     src/GroupManager/ColorDialog.cpp

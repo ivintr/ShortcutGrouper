@@ -1,6 +1,7 @@
 #include "TrayIcon.h"
 #include "ModernMenu.h"
 #include "Renderer.h"
+#include "Updater.h"
 #include "Lang.h"
 #include "../../resources/resource.h"
 #include <shellapi.h>
@@ -53,6 +54,15 @@ void TrayIcon::Remove()
     }
 }
 
+// Подпись пункта обновлений: если версия известна — с номером.
+static std::wstring UpdateMenuLabel()
+{
+    std::wstring s = Lang::Get(Str::T_Update);
+    if (Updater::HasUpdate() && !Updater::UpdateVersion().empty())
+        s += L" (" + Updater::UpdateVersion() + L")";
+    return s;
+}
+
 void TrayIcon::ShowBalloon(const wchar_t* title, const wchar_t* text)
 {
     if (!m_nid) return;
@@ -79,6 +89,7 @@ void TrayIcon::ShowMenu(HWND hWnd, bool widgetsHidden)
         Lang::Get(widgetsHidden ? Str::T_ShowWidgets : Str::T_HideWidgets));
     AppendMenuW(hMenu, MF_STRING, IDM_REFRESH, Lang::Get(Str::T_Refresh));
     AppendMenuW(hMenu, MF_STRING, IDM_SETTINGS, Lang::Get(Str::T_Settings));
+    AppendMenuW(hMenu, MF_STRING, IDM_UPDATE, UpdateMenuLabel().c_str());
     AppendMenuW(hMenu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(hMenu, MF_STRING, IDM_EXIT, Lang::Get(Str::T_Exit));
 
@@ -103,6 +114,7 @@ int TrayIcon::ShowModernMenu(HWND hWnd, WidgetRenderer* renderer, bool widgetsHi
     menu.items.push_back({ Lang::Get(widgetsHidden ? Str::T_ShowWidgets : Str::T_HideWidgets), IDM_TOGGLE_VIS });
     menu.items.push_back({ Lang::Get(Str::T_Refresh), IDM_REFRESH });
     menu.items.push_back({ Lang::Get(Str::T_Settings), IDM_SETTINGS });
+    menu.items.push_back({ UpdateMenuLabel(), IDM_UPDATE });
     menu.items.push_back({ L"", 0, false, false, true });
     menu.items.push_back({ Lang::Get(Str::T_Exit), IDM_EXIT });
 
