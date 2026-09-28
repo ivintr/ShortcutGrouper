@@ -39,6 +39,20 @@ foreach ($f in @($ExeName, $DllName, $MsixName, $CertName, "Uninstall.ps1"))
 Write-Host "=== Installing Shortcut Grouper ===" -ForegroundColor Cyan
 Write-Host "Target: $InstallDir"
 
+# Explorer держит ShellExtension.dll подгруженной, а приложение — exe:
+# останавливаем обоих ДО файловых операций, иначе замена упадёт.
+# Explorer поднимаем в finally — даже при обрыве установки.
+Get-Process GroupManager -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+$expWasRunning = $null -ne (Get-Process explorer -ErrorAction SilentlyContinue)
+if ($expWasRunning)
+{
+    Write-Host "Stopping Explorer for the install..."
+    Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+}
+
+try
+{
 # ---- Step 1: Remove previous installation (package + files) ----
 $oldPkg = Get-AppxPackage -Name "ShortcutGrouper" -ErrorAction SilentlyContinue
 if ($oldPkg)
@@ -173,4 +187,14 @@ if ($exp)
 Write-Host ""
 Write-Host "=== Installation Complete ===" -ForegroundColor Green
 Write-Host "Launch 'Shortcut Grouper' from Start Menu." -ForegroundColor Yellow
+}
+finally
+{
+    # Explorer поднимаем всегда: его остановка в начале не должна
+    # оставить систему без оболочки при обрыве установки.
+    if ($expWasRunning -and !(Get-Process explorer -ErrorAction SilentlyContinue))
+    {
+        Start-Process explorer.exe
+    }
+}
 Write-Host "Autostart enables itself on first launch (per user, no admin needed)." -ForegroundColor Yellow

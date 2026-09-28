@@ -3,7 +3,7 @@ project(ShortcutGrouper LANGUAGES CXX)
 
 # Версия пакета: единый источник для MSIX (build-sparse.ps1 -Version).
 # Бампить при каждом релизе, иначе апгрейды пакета не детектятся.
-set(SHORTCUT_GROUPER_VERSION "1.0.2.0" CACHE STRING "MSIX package version N.N.N.N")
+set(SHORTCUT_GROUPER_VERSION "1.1.0.0" CACHE STRING "MSIX package version N.N.N.N")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
