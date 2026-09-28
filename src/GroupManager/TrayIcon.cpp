@@ -9,7 +9,7 @@
 
 #pragma comment(lib, "Shell32.lib")
 
-void TrayIcon::Create(HINSTANCE hInst, HWND hOwner, UINT msgId)
+void TrayIcon::Create(HINSTANCE, HWND hOwner, UINT msgId)
 {
     // Повторный Create без Remove — утечка m_nid и orphan-иконка.
     if (m_nid)

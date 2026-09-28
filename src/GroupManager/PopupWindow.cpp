@@ -555,7 +555,7 @@ static int PopupMaxListHForPoint(POINT pt)
     return avail;
 }
 
-bool PopupWindow::Create(HWND hParent, const GroupData& group, WidgetRenderer* renderer)
+bool PopupWindow::Create(HWND, const GroupData& group, WidgetRenderer* renderer)
 {
     static bool registered = false;
     if (!registered)
@@ -932,7 +932,7 @@ void PopupWindow::OnLButtonDown(int x, int y)
     }
 }
 
-void PopupWindow::OnLButtonUp(int x, int y)
+void PopupWindow::OnLButtonUp(int, int)
 {
     if (m_closing) return;
     if (m_resizing)

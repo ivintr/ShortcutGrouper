@@ -442,19 +442,6 @@ static COLORREF SystemAccent()
     return RGB(0, 103, 192);
 }
 
-static bool ReadRowValue(int id)
-{
-    switch (id)
-    {
-    case IDC_ROW_AUTOSTART: return Autostart::IsEnabled();
-    case IDC_ROW_SNAP:      return Settings::IsSnapToGrid();
-    case IDC_ROW_PRUNE:     return Settings::IsAutoPruneDead();
-    case IDC_ROW_OVERFLOW:  return Settings::IsShowOverflow();
-    // IDC_ROW_DEFGRID — строка-список, тумблера у неё нет.
-    }
-    return false;
-}
-
 static void ApplyRowValue(int id, bool on)
 {
     switch (id)

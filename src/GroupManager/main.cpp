@@ -147,9 +147,25 @@ static LRESULT CALLBACK IpcWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
         wchar_t* cmd = (wchar_t*)wParam;
         if (cmd)
         {
-            g_manager.OnGroupCommand(cmd);
+            // Служебные команды обновления (CLI --check-for-updates /
+            // --install-update): не grouping, выполняет Updater.
+            if (wcscmp(cmd, L"--check-for-updates") == 0)
+            {
+                DebugLog(L"IPC: update check requested");
+                Updater::CheckAsync(true);
+            }
+            else if (wcscmp(cmd, L"--install-update") == 0)
+            {
+                DebugLog(L"IPC: update install requested");
+                if (!Updater::InstallUpdate(g_hIpcWnd))
+                    Updater::CheckAsync(true);
+            }
+            else
+            {
+                g_manager.OnGroupCommand(cmd);
+                DebugLog(L"IPC: OnGroupCommand done");
+            }
             delete[] cmd;
-            DebugLog(L"IPC: OnGroupCommand done");
         }
         return 0;
     }
@@ -498,6 +514,22 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, LPWSTR lpCmdLine, int)
             return 0;
         }
         DebugLog(L"No running instance, handling locally");
+    }
+
+    // Команды обновления (CLI --check-for-updates / --install-update):
+    // выполняет только живой процесс; без него делать нечего (состояния
+    // обновлений нет) — точно не скармливаем их OnGroupCommand как пути.
+    if (hasArgs && (CmdLineHasArg(lpCmdLine, L"--check-for-updates") ||
+                    CmdLineHasArg(lpCmdLine, L"--install-update")))
+    {
+        const wchar_t* cmd = CmdLineHasArg(lpCmdLine, L"--check-for-updates") ?
+            L"--check-for-updates" : L"--install-update";
+        if (SendToExistingInstance(cmd))
+            DebugLog(L"Update command forwarded to running instance");
+        else
+            DebugLog(L"No running instance for update command");
+        if (hrCo == S_OK || hrCo == S_FALSE) CoUninitialize();
+        return 0;
     }
 
     // Синглтон для полного запуска: второй полный инстанс плодил бы

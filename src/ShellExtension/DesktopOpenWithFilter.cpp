@@ -64,7 +64,7 @@ IFACEMETHODIMP DesktopOpenWithFilter::Initialize(
 
 // --- IContextMenu ---
 IFACEMETHODIMP DesktopOpenWithFilter::QueryContextMenu(
-    HMENU hMenu, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT uFlags)
+    HMENU hMenu, UINT, UINT idCmdFirst, UINT, UINT)
 {
     if (!m_isDesktop)
         return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);

@@ -86,7 +86,7 @@ static void BL(const wchar_t* msg)
     AppLog(L"BL", L"%s", msg);
 }
 
-static BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
+static BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM)
 {
     WCHAR cls[128] = {};
     GetClassNameW(hwnd, cls, 128);

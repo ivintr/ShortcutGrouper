@@ -90,7 +90,7 @@ public:
         return r;
     }
 
-    HRESULT STDMETHODCALLTYPE DragEnter(IDataObject* pDataObj, DWORD grfKeyState, POINTL pt, DWORD* pdwEffect) override {
+    HRESULT STDMETHODCALLTYPE DragEnter(IDataObject*, DWORD, POINTL, DWORD* pdwEffect) override {
         OutputDebugStringW(L"WidgetDropTarget DragEnter\n");
         if (!pdwEffect) return E_POINTER;
         *pdwEffect = DROPEFFECT_COPY;
@@ -98,7 +98,7 @@ public:
         if (m_widget) m_widget->RefreshGlow();
         return S_OK;
     }
-    HRESULT STDMETHODCALLTYPE DragOver(DWORD grfKeyState, POINTL pt, DWORD* pdwEffect) override {
+    HRESULT STDMETHODCALLTYPE DragOver(DWORD, POINTL, DWORD* pdwEffect) override {
         if (!pdwEffect) return E_POINTER;
         *pdwEffect = DROPEFFECT_COPY;
         if (m_widget) m_widget->RefreshGlow();
@@ -109,7 +109,7 @@ public:
         return S_OK;
     }
 
-    HRESULT STDMETHODCALLTYPE Drop(IDataObject* pDataObj, DWORD grfKeyState, POINTL pt, DWORD* pdwEffect) override {
+    HRESULT STDMETHODCALLTYPE Drop(IDataObject* pDataObj, DWORD, POINTL, DWORD* pdwEffect) override {
         OutputDebugStringW(L"WidgetDropTarget Drop\n");
         if (!pdwEffect) return E_POINTER;
         *pdwEffect = DROPEFFECT_COPY;
@@ -256,7 +256,7 @@ static void RegisterWidgetClass(HINSTANCE hInst)
 // DesktopWidget
 // ---------------------------------------------------------------------------
 
-bool DesktopWidget::Create(HWND hParent, const GroupData& group,
+bool DesktopWidget::Create(HWND, const GroupData& group,
     WidgetRenderer* renderer, WidgetManager* manager)
 {
     static bool registered = false;
@@ -1280,12 +1280,6 @@ static bool RectsOverlap(const RECT& a, const RECT& b)
 {
     return a.left < b.right && a.right > b.left &&
            a.top < b.bottom && a.bottom > b.top;
-}
-
-static RECT InflatedRect(RECT r, int pad)
-{
-    r.left -= pad; r.top -= pad; r.right += pad; r.bottom += pad;
-    return r;
 }
 
 // Прямоугольники остальных наших виджетов (себя исключаем), чтобы виджеты

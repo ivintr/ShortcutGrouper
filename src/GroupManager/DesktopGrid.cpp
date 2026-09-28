@@ -457,7 +457,6 @@ static bool OpenComDesktopView(ComDesktopView& d)
         IDispatch* pdisp = nullptr;
         if (FAILED(psw->Item(vIdx, &pdisp)) || !pdisp) continue;
         // Путь 2: проверяем, что HWND этого вида — наш DefView.
-        bool isOurs = false;
         {
             IServiceProvider* psp = nullptr;
             if (SUCCEEDED(pdisp->QueryInterface(IID_IServiceProvider, (void**)&psp)) && psp)
@@ -979,14 +978,14 @@ void DumpDesktopWindows()
     // Живые позиции иконок в выбранном окне — сверка после рестарта Explorer.
     {
         std::vector<RECT> all = QueryDesktopIconRects();
-        int n = 0;
+        int dumped = 0;
         for (const RECT& r : all)
         {
-            if (n >= 16) break;
-            LogGrid("dumppos", n, r.left, r.top, 0, 0, 0);
-            n++;
+            if (dumped >= 16) break;
+            LogGrid("dumppos", dumped, r.left, r.top, 0, 0, 0);
+            dumped++;
         }
-        LogGrid("dumppos-done", n, 0, 0, 0, 0, 0);
+        LogGrid("dumppos-done", dumped, 0, 0, 0, 0, 0);
     }
 }
 

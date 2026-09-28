@@ -1311,7 +1311,7 @@ RenderedBitmap WidgetRenderer::RenderPopup(const GroupData& group, int hoveredIn
     return { hBmp, w, h };
 }
 
-int WidgetRenderer::HitTestPopup(const GroupData& group, int mouseX, int mouseY, int scrollY)
+int WidgetRenderer::HitTestPopup(const GroupData& group, int, int mouseY, int scrollY)
 {
     int headerH = POPUP_HEADER_H;
     int localY = mouseY - POPUP_PAD + scrollY;

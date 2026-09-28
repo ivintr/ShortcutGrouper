@@ -80,8 +80,8 @@ ShortcutInfo ExtractLnkInfo(const std::wstring& lnkPath)
             if (lnkFname && *lnkFname)
             {
                 info.name = lnkFname;
-                PCWSTR ext = PathFindExtensionW(info.name.c_str());
-                if (ext) info.name.resize(ext - info.name.c_str());
+                PCWSTR dot = PathFindExtensionW(info.name.c_str());
+                if (dot) info.name.resize(dot - info.name.c_str());
             }
             if (info.name.empty())
                 info.name = desc;
@@ -91,8 +91,8 @@ ShortcutInfo ExtractLnkInfo(const std::wstring& lnkPath)
                 if (fname)
                 {
                     info.name = fname;
-                    PCWSTR ext = PathFindExtensionW(info.name.c_str());
-                    if (ext) info.name.resize(ext - info.name.c_str());
+                    PCWSTR dot = PathFindExtensionW(info.name.c_str());
+                    if (dot) info.name.resize(dot - info.name.c_str());
                 }
             }
         }

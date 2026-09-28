@@ -3,7 +3,7 @@ project(ShortcutGrouper LANGUAGES CXX)
 
 # Версия пакета: единый источник для MSIX (build-sparse.ps1 -Version).
 # Бампить при каждом релизе, иначе апгрейды пакета не детектятся.
-set(SHORTCUT_GROUPER_VERSION "1.1.0.0" CACHE STRING "MSIX package version N.N.N.N")
+set(SHORTCUT_GROUPER_VERSION "1.1.1.0" CACHE STRING "MSIX package version N.N.N.N")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -13,13 +13,15 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
 
 # Исходники в UTF-8 (русские строковые литералы): без этого MSVC читает
 # файлы в системной ANSI-кодировке и L"..." превращается в кракозябры.
+# /W4: строгие предупреждения для своего кода (vendor — SYSTEM, не мешает).
 if (MSVC)
-    add_compile_options(/utf-8)
+    add_compile_options(/utf-8 /W4)
 endif()
 
-# nlohmann/json (header-only, bundled)
+# nlohmann/json (header-only, bundled). SYSTEM: warnings from third-party
+# headers are not ours (/W4 builds stay clean).
 add_library(nlohmann_json INTERFACE)
-target_include_directories(nlohmann_json INTERFACE ${CMAKE_SOURCE_DIR}/vendor/include)
+target_include_directories(nlohmann_json SYSTEM INTERFACE ${CMAKE_SOURCE_DIR}/vendor/include)
 
 # --- Common (header-only + compiled helpers, shared) ---
 add_library(Common STATIC
