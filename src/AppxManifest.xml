@@ -2,11 +2,12 @@
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
   xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
-  IgnorableNamespaces="rescap com desktop4 desktop5">
+  IgnorableNamespaces="uap10 rescap com desktop4 desktop5">
 
   <Identity
     Name="ShortcutGrouper"
@@ -17,6 +18,7 @@
     <DisplayName>Shortcut Grouper</DisplayName>
     <PublisherDisplayName>ShortcutGrouper</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
+    <uap10:AllowExternalContent>true</uap10:AllowExternalContent>
   </Properties>
 
   <Dependencies>
@@ -34,7 +36,8 @@
   <Applications>
     <Application Id="App"
       Executable="GroupManager.exe"
-      EntryPoint="Windows.FullTrustApplication">
+      EntryPoint="Windows.FullTrustApplication"
+      uap10:TrustLevel="mediumIL">
       <uap:VisualElements
         DisplayName="Shortcut Grouper"
         Description="Group desktop shortcuts"

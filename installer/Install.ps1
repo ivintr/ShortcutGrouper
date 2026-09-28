@@ -21,6 +21,9 @@ if (-not $isAdmin)
     exit $LASTEXITCODE
 }
 
+# Transcript: окно может закрыться раньше pause — диагноз остаётся в файле.
+Start-Transcript -Path (Join-Path $env:TEMP "wsg_install.log") -Append -ErrorAction SilentlyContinue | Out-Null
+
 $SrcDir = Split-Path -Parent $PSCommandPath
 $ExeName = "GroupManager.exe"
 $DllName = "ShellExtension.dll"
@@ -55,6 +58,9 @@ else
 # поэтому чистим назначение перед распаковкой.
 Write-Host "[2/7] Copying files..."
 New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+# Чистим целиком (прошлые прогоны могли оставить AppxBlockMap.xml и др. —
+# 2-аргументный ExtractToDirectory падает на любом конфликте).
+Get-ChildItem -LiteralPath $InstallDir -Force | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 Copy-Item (Join-Path $SrcDir "Uninstall.ps1") (Join-Path $InstallDir "Uninstall.ps1") -Force
 # Sparse payload: extract MSIX next to the binaries (single copy on disk).
 # NOTE: 3-arg ExtractToDirectory(overwrite) exists only on .NET Core 3.0+,
@@ -62,10 +68,6 @@ Copy-Item (Join-Path $SrcDir "Uninstall.ps1") (Join-Path $InstallDir "Uninstall.
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $stageZip = Join-Path $env:TEMP "wsg_payload.zip"
 Copy-Item (Join-Path $SrcDir $MsixName) $stageZip -Force
-Remove-Item (Join-Path $InstallDir $ExeName) -Force -ErrorAction SilentlyContinue
-Remove-Item (Join-Path $InstallDir $DllName) -Force -ErrorAction SilentlyContinue
-Remove-Item (Join-Path $InstallDir "AppxManifest.xml") -Force -ErrorAction SilentlyContinue
-Remove-Item (Join-Path $InstallDir "Assets") -Recurse -Force -ErrorAction SilentlyContinue
 [System.IO.Compression.ZipFile]::ExtractToDirectory($stageZip, $InstallDir)
 Remove-Item $stageZip -Force -ErrorAction SilentlyContinue
 if (!(Test-Path (Join-Path $InstallDir "AppxManifest.xml")))
@@ -78,18 +80,32 @@ if (Test-Path $legacyTemp) { Remove-Item $legacyTemp -Recurse -Force -ErrorActio
 Write-Host "  Files ready." -ForegroundColor Green
 
 # ---- Step 3: Certificate to LocalMachine\Root (+ CurrentUser\Root) ----
+# NOTE: X509Store.Add в Root показывает UI-подтверждение, которое в
+# неинтерактивном режиме превращается в CryptographicException
+# (Access denied). certutil идёт тихо и скриптуемо.
 Write-Host "[3/7] Installing certificate..."
 $pfxPath = Join-Path $SrcDir $CertName
 $securePwd = ConvertTo-SecureString $CertPassword -AsPlainText -Force
-$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($pfxPath, $securePwd)
-foreach ($scope in @("LocalMachine", "CurrentUser"))
+$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(
+    $pfxPath, $securePwd,
+    [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
+$cerPath = Join-Path $env:TEMP "shortcutgrouper.cer"
+[IO.File]::WriteAllBytes($cerPath, $cert.Export(
+    [System.Security.Cryptography.X509Certificates.X509ContentType]::Cert))
+& certutil.exe -addstore Root $cerPath | Out-Null
+$lmOk = $LASTEXITCODE -eq 0
+& certutil.exe -user -addstore Root $cerPath | Out-Null
+$cuOk = $LASTEXITCODE -eq 0
+Remove-Item $cerPath -Force -ErrorAction SilentlyContinue
+if ($lmOk -and $cuOk)
 {
-    $store = New-Object System.Security.Cryptography.X509Certificates.X509Store("Root", $scope)
-    $store.Open("ReadWrite")
-    $store.Add($cert)
-    $store.Close()
+    Write-Host "  Certificate installed ($($cert.Thumbprint))" -ForegroundColor Green
 }
-Write-Host "  Certificate installed ($($cert.Thumbprint))" -ForegroundColor Green
+else
+{
+    # Не фатально: при включённом Developer Mode sparse-пакет ставится и так.
+    Write-Host "  WARNING: cert import LM=$lmOk CU=$cuOk (Developer Mode covers install)." -ForegroundColor Yellow
+}
 
 # ---- Step 4: Developer Mode ----
 Write-Host "[4/7] Checking Developer Mode..."
@@ -100,10 +116,25 @@ Write-Host "  Developer Mode ensured." -ForegroundColor Green
 
 # ---- Step 5: Register sparse package ----
 Write-Host "[5/7] Registering sparse package..."
-Add-AppxPackage -Register (Join-Path $InstallDir "AppxManifest.xml") -ExternalLocation $InstallDir -ErrorAction Stop
+$manifestPath = Join-Path $InstallDir "AppxManifest.xml"
+$regMode = "ExternalLocation"
+try
+{
+    Add-AppxPackage -Register $manifestPath -ExternalLocation $InstallDir -ErrorAction Stop
+}
+catch
+{
+    # -ExternalLocation поддерживают не все конфигурации (нужен win32App-контекст,
+    # который текущий MakeAppx не пакует). Fallback — plain -Register из того же
+    # каталога: файлы остаются на месте, пакет регистрируется. Явно, не молча.
+    Write-Host "  -ExternalLocation rejected ($($_.Exception.Message.Split("`n")[0]))" -ForegroundColor Yellow
+    Write-Host "  Falling back to plain -Register (files stay in place)..."
+    Add-AppxPackage -Register $manifestPath -ErrorAction Stop
+    $regMode = "Register"
+}
 $pkg = Get-AppxPackage -Name "ShortcutGrouper" -ErrorAction SilentlyContinue
 if (-not $pkg) { throw "Sparse package registration failed." }
-Write-Host "  Package: $($pkg.Name) v$($pkg.Version)" -ForegroundColor Green
+Write-Host "  Package: $($pkg.Name) v$($pkg.Version) via $regMode" -ForegroundColor Green
 
 # ---- Step 6: Register COM DLL (already elevated) ----
 Write-Host "[6/7] Registering COM DLL..."

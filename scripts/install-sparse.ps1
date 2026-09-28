@@ -31,25 +31,28 @@ Write-Host "=== Installing Shortcut Grouper ===" -ForegroundColor Cyan
 # ---- Step 1: Import certificate to LocalMachine\Root ----
 if (Test-Path $CertFile)
 {
-    Write-Host "`n[1/5] Importing certificate to LocalMachine\Root..."
+    Write-Host "`n[1/5] Importing certificate to Root stores (via certutil, no UI)..."
     $securePwd = ConvertTo-SecureString $CertPassword -AsPlainText -Force
     $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(
-        (Resolve-Path $CertFile).Path, $securePwd)
+        (Resolve-Path $CertFile).Path, $securePwd,
+        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
+    $cerPath = Join-Path $env:TEMP "shortcutgrouper.cer"
+    [IO.File]::WriteAllBytes($cerPath, $cert.Export(
+        [System.Security.Cryptography.X509Certificates.X509ContentType]::Cert))
+    & certutil.exe -addstore Root $cerPath | Out-Null
+    $lmOk = $LASTEXITCODE -eq 0
+    & certutil.exe -user -addstore Root $cerPath | Out-Null
+    $cuOk = $LASTEXITCODE -eq 0
+    Remove-Item $cerPath -Force -ErrorAction SilentlyContinue
 
-    $store = New-Object System.Security.Cryptography.X509Certificates.X509Store(
-        "Root", "LocalMachine")
-    $store.Open("ReadWrite")
-    $store.Add($cert)
-    $store.Close()
-
-    # Also add to CurrentUser\Root for good measure
-    $store2 = New-Object System.Security.Cryptography.X509Certificates.X509Store(
-        "Root", "CurrentUser")
-    $store2.Open("ReadWrite")
-    $store2.Add($cert)
-    $store2.Close()
-
-    Write-Host "  Certificate imported (Thumbprint: $($cert.Thumbprint))" -ForegroundColor Green
+    if ($lmOk -and $cuOk)
+    {
+        Write-Host "  Certificate imported (Thumbprint: $($cert.Thumbprint))" -ForegroundColor Green
+    }
+    else
+    {
+        Write-Host "  WARNING: cert import LM=$lmOk CU=$cuOk (Developer Mode covers install)." -ForegroundColor Yellow
+    }
 }
 else
 {
