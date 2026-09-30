@@ -11,6 +11,7 @@
 #include <vector>
 #include "Renderer.h"
 #include "WidgetTypes.h"
+#include "WidgetTypes.h"
 
 #pragma comment(lib, "shlwapi.lib")
 #pragma comment(lib, "ole32.lib")
@@ -63,6 +64,51 @@ static void AlphaBlit(HDC dst, int dx, int dy, int w, int h,
     GdiAlphaBlend(dst, dx, dy, w, h, mem, 0, 0, w, h, bf);
     SelectObject(mem, old);
     DeleteDC(mem);
+}
+
+// NETSCAPE2.0 Application Extension (infinite loop). GDI+ не пишет его сам —
+// без блока гифка играет один раз и встаёт. Вставляем после заголовка и
+// глобальной палитры (если есть).
+static bool AddGifLoop(const wchar_t* path)
+{
+    FILE* f = nullptr;
+    if (_wfopen_s(&f, path, L"rb") != 0 || !f) return false;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    if (sz < 13)
+    {
+        fclose(f);
+        return false;
+    }
+    std::vector<BYTE> data((size_t)sz);
+    size_t got = fread(data.data(), 1, (size_t)sz, f);
+    fclose(f);
+    if (got != (size_t)sz || memcmp(data.data(), "GIF89a", 6) != 0)
+        return false;
+    size_t off = 13; // заголовок (6) + дескриптор экрана (7)
+    // Байт 10 — packed-поле LSD: бит 7 = есть глобальная палитра,
+    // биты 0-2 — её размер (3 * 2^(N+1) байт). Блок вставляем ПОСЛЕ неё.
+    if (data[10] & 0x80)
+        off += 3u * (2u << (data[10] & 0x07));
+    if (off > data.size())
+        return false;
+    // Не дублируем.
+    static const BYTE ext[] = {
+        0x21, 0xFF, 0x0B, 'N', 'E', 'T', 'S', 'C', 'A', 'P', 'E', '2', '.', '0',
+        0x03, 0x01, 0x00, 0x00, 0x00
+    };
+    for (size_t i = 0; i + sizeof(ext) <= data.size(); i++)
+    {
+        if (memcmp(&data[i], ext, sizeof(ext)) == 0)
+            return true;
+    }
+    data.insert(data.begin() + (ptrdiff_t)off, ext, ext + sizeof(ext));
+    FILE* w = nullptr;
+    if (_wfopen_s(&w, path, L"wb") != 0 || !w) return false;
+    size_t wrote = fwrite(data.data(), 1, data.size(), w);
+    fclose(w);
+    return wrote == data.size();
 }
 
 // One animation keyframe: widget + optional overlay (popup or menu).
@@ -310,56 +356,66 @@ int wmain(int argc, wchar_t** argv)
     // 1. Idle + glow ramp.
     W(wPlain, 500);
     W(wG1, 5); W(wG2, 5); W(wGlow, 200);
-    // 2. Popup slides + fades in.
-    P(wGlow, pb, -pw + 30, 80, 5);
-    P(wGlow, pb, -pw * 2 / 3, 140, 5);
-    P(wGlow, pb, -pw / 3, 200, 5);
-    P(wPlain, pb, 0, 255, 700);
+    // 2. Popup slides + fades in (6 мелких шагов вместо 3 крупных —
+    // крупные шаги на 50мс и дают «мигание»).
+    P(wGlow, pb, -pw * 5 / 6, 70, 4);
+    P(wGlow, pb, -pw * 4 / 6, 110, 4);
+    P(wGlow, pb, -pw * 3 / 6, 150, 4);
+    P(wGlow, pb, -pw * 2 / 6, 190, 4);
+    P(wGlow, pb, -pw / 6, 225, 4);
+    P(wPlain, pb, 0, 255, 1000);
     // 3. Row hover walks the whole list.
     P(wPlain, pbHov[0], 0, 255, 50);
     P(wPlain, pbHov[1], 0, 255, 50);
     P(wPlain, pbHov[2], 0, 255, 50);
     P(wPlain, pbHov[3], 0, 255, 300);
     // 4. Tall popup scrolls down and back.
-    P(wTall, pbT0, 0, 255, 250);
+    P(wTall, pbT0, 0, 255, 350);
     P(wTall, pbT1, 0, 255, 40);
     P(wTall, pbT2, 0, 255, 40);
-    P(wTall, pbT3, 0, 255, 250);
+    P(wTall, pbT3, 0, 255, 350);
     P(wTall, pbT1, 0, 255, 40);
-    P(wTall, pbT0, 0, 255, 250);
+    P(wTall, pbT0, 0, 255, 350);
     P(wTall, pbT1, 0, 255, 40);
     P(wTall, pbT2, 0, 255, 40);
-    P(wTall, pbT3, 0, 255, 250);
+    P(wTall, pbT3, 0, 255, 350);
     // 5. Overflow badge group + full popup.
-    P(wTall, nullptr, 0, 0, 450);
+    P(wTall, nullptr, 0, 0, 550);
     // (wTall already shows +6 badge.)
     // 6. Glass colors, hideName, 3x3 grid, selected.
-    W(wBlue, 200); W(wTeal, 200); W(wPurple, 350);
+    W(wBlue, 250); W(wTeal, 250); W(wPurple, 350);
     W(wNoName, 150);
-    W(wGrid, 200);
-    W(wSel, 200);
-    // 7. Popup fades out, context menu (check + chevrons) fades in.
-    P(wPlain, pb, 0, 110, 8);
-    M(mbCtx, 120, 8);
+    W(wGrid, 250);
+    W(wSel, 250);
+    // 7. Popup fades out (3 ступени), context menu fades in (3 ступени).
+    P(wPlain, pb, 0, 170, 4);
+    P(wPlain, pb, 0, 90, 4);
+    M(mbCtx, 90, 4);
+    M(mbCtx, 170, 4);
     M(mbCtx, 255, 150);
-    M(mbCtxH, 255, 200);
-    M(mbCtx, 110, 8);
+    M(mbCtxH, 255, 300);
+    M(mbCtx, 170, 4);
+    M(mbCtx, 90, 4);
     // 8. Command-bar menu with glyphs.
-    M(mbCmd, 130, 8);
+    M(mbCmd, 130, 4);
+    M(mbCmd, 200, 4);
     M(mbCmd, 255, 150);
-    M(mbCmdH, 255, 200);
-    M(mbCmd, 110, 8);
+    M(mbCmdH, 255, 300);
+    M(mbCmd, 170, 4);
+    M(mbCmd, 90, 4);
     // 9. Tray menu: in, full hover walk, hold, out.
-    M(mb, 130, 8);
-    M(mb, 255, 250);
+    M(mb, 130, 4);
+    M(mb, 200, 4);
+    M(mb, 255, 150);
     M(mbH2, 255, 50);
     M(mbH3, 255, 50);
     M(mbH4, 255, 50);
     M(mbH5, 255, 50);
-    M(mbH6, 255, 450);
-    M(mb, 110, 8);
+    M(mbH6, 255, 700);
+    M(mb, 170, 4);
+    M(mb, 90, 4);
     // 10. Back to idle.
-    W(wPlain, 1500);
+    W(wPlain, 2500);
 
     CLSID gifClsid;
     if (GetEncoderClsid(L"image/gif", &gifClsid) < 0)
@@ -466,10 +522,18 @@ int wmain(int argc, wchar_t** argv)
         ep.Parameter[0].Value = &v;
         st = multi->SaveAdd(&ep);
         delete multi;
+        multi = nullptr;
     }
     else
     {
         delete multi;
+        multi = nullptr;
+    }
+    // Бесконечный цикл анимации (иначе играет один раз и встаёт).
+    if (st == Gdiplus::Ok && !AddGifLoop(outPath))
+    {
+        wprintf(L"loop extension failed\n");
+        st = Gdiplus::GenericError;
     }
 
     for (HBITMAP b : owned) DeleteObject(b);
