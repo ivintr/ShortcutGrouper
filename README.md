@@ -4,6 +4,10 @@
 
 A Windows 11 shell extension that adds a **"Объединить в группу"** (Group Shortcuts) button to the context menu command bar. When you select two or more `.lnk` shortcut files on the desktop, this button lets you group them into a visual folder widget.
 
+## Screenshots
+
+![Desktop folder widget with overflow badge](docs/screenshots/widget.png)
+
 ## Features
 
 - **Desktop folder widgets** — iOS/Android-style visual overlays on the Windows desktop showing grouped shortcut icons
