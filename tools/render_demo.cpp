@@ -406,8 +406,8 @@ int wmain(int argc, wchar_t** argv)
         K(nullptr, m, true, 0, a, d);
     };
     // 1. Idle + glow ramp.
-    W(wPlain, 500);
-    W(wG1, 5); W(wG2, 5); W(wGlow, 200);
+    W(wPlain, 1800);
+    W(wG1, 5); W(wG2, 5); W(wGlow, 500);
     // 2. Popup slides + fades in (6 мелких шагов вместо 3 крупных —
     // крупные шаги на 50мс и дают «мигание»).
     P(wGlow, pb, -pw * 5 / 6, 70, 4);
@@ -415,12 +415,12 @@ int wmain(int argc, wchar_t** argv)
     P(wGlow, pb, -pw * 3 / 6, 150, 4);
     P(wGlow, pb, -pw * 2 / 6, 190, 4);
     P(wGlow, pb, -pw / 6, 225, 4);
-    P(wPlain, pb, 0, 255, 1000);
+    P(wPlain, pb, 0, 255, 1800);
     // 3. Row hover walks the whole list.
     P(wPlain, pbHov[0], 0, 255, 50);
     P(wPlain, pbHov[1], 0, 255, 50);
     P(wPlain, pbHov[2], 0, 255, 50);
-    P(wPlain, pbHov[3], 0, 255, 300);
+    P(wPlain, pbHov[3], 0, 255, 1000);
     // 3b. Drag-and-drop файла на виджет: иконка летит, виджет вспыхивает,
     // ярлык добавляется (+1 к счётчику).
     {
@@ -443,52 +443,52 @@ int wmain(int argc, wchar_t** argv)
     WMv(w5plain, 20, 8, 5);
     WMv(w5plain, 0, 0, 40);
     // 4. Tall popup scrolls down and back.
-    P(wTall, pbT0, 0, 255, 350);
+    P(wTall, pbT0, 0, 255, 500);
     P(wTall, pbT1, 0, 255, 40);
     P(wTall, pbT2, 0, 255, 40);
-    P(wTall, pbT3, 0, 255, 350);
+    P(wTall, pbT3, 0, 255, 500);
     P(wTall, pbT1, 0, 255, 40);
-    P(wTall, pbT0, 0, 255, 350);
+    P(wTall, pbT0, 0, 255, 500);
     P(wTall, pbT1, 0, 255, 40);
     P(wTall, pbT2, 0, 255, 40);
-    P(wTall, pbT3, 0, 255, 350);
+    P(wTall, pbT3, 0, 255, 500);
     // 5. Overflow badge group + full popup.
-    P(wTall, nullptr, 0, 0, 550);
+    P(wTall, nullptr, 0, 0, 850);
     // (wTall already shows +6 badge.)
     // 6. Glass colors, hideName, 3x3 grid, selected.
-    W(wBlue, 250); W(wTeal, 250); W(wPurple, 350);
-    W(wNoName, 150);
-    W(wGrid, 250);
-    W(wSel, 250);
+    W(wBlue, 500); W(wTeal, 500); W(wPurple, 600);
+    W(wNoName, 400);
+    W(wGrid, 350);
+    W(wSel, 350);
     // 7. Popup fades out (3 ступени), context menu fades in (3 ступени).
     P(wPlain, pb, 0, 170, 4);
     P(wPlain, pb, 0, 90, 4);
     M(mbCtx, 90, 4);
     M(mbCtx, 170, 4);
-    M(mbCtx, 255, 150);
-    M(mbCtxH, 255, 300);
+    M(mbCtx, 255, 450);
+    M(mbCtxH, 255, 450);
     M(mbCtx, 170, 4);
     M(mbCtx, 90, 4);
     // 8. Command-bar menu with glyphs.
     M(mbCmd, 130, 4);
     M(mbCmd, 200, 4);
-    M(mbCmd, 255, 150);
-    M(mbCmdH, 255, 300);
+    M(mbCmd, 255, 450);
+    M(mbCmdH, 255, 450);
     M(mbCmd, 170, 4);
     M(mbCmd, 90, 4);
     // 9. Tray menu: in, full hover walk, hold, out.
     M(mb, 130, 4);
     M(mb, 200, 4);
-    M(mb, 255, 150);
+    M(mb, 255, 450);
     M(mbH2, 255, 50);
     M(mbH3, 255, 50);
     M(mbH4, 255, 50);
     M(mbH5, 255, 50);
-    M(mbH6, 255, 700);
+    M(mbH6, 255, 1200);
     M(mb, 170, 4);
     M(mb, 90, 4);
     // 10. Back to idle.
-    W(wPlain, 2500);
+    W(wPlain, 3500);
 
     CLSID gifClsid;
     if (GetEncoderClsid(L"image/gif", &gifClsid) < 0)
