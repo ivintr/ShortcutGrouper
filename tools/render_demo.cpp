@@ -1,7 +1,7 @@
 // render_demo (dev tool): renders app UI with the real WidgetRenderer headless
-// and assembles docs demo GIF: widget glow -> popup slide/fade -> row hover
-// walk -> overflow group -> 3x3 grid -> selected state -> tray-style menu.
-// Not part of the app.
+// and assembles docs demo GIF (~30s): widget glow, popup slide/fade, row
+// hover walk, popup scroll, overflow group, glass colors, hideName, 3x3 grid,
+// selected state, command-bar menu, tray menu walk. Not part of the app.
 #include <Windows.h>
 #include <gdiplus.h>
 #include <shlwapi.h>
@@ -65,17 +65,56 @@ static void AlphaBlit(HDC dst, int dx, int dy, int w, int h,
     DeleteDC(mem);
 }
 
-// One animation keyframe. Only one of popup/menu/bigShown is drawn;
-// widget always drawn unless widgetHidden.
+// One animation keyframe: widget + optional overlay (popup or menu).
 struct Key {
     HBITMAP widget = nullptr;
-    HBITMAP popup = nullptr;
-    int popupDx = 0;
-    BYTE popupAlpha = 255;
-    HBITMAP menu = nullptr;
-    BYTE menuAlpha = 255;
-    int delayCs = 5;
+    HBITMAP overlay = nullptr; // popup or menu bitmap
+    bool overlayIsMenu = false;
+    int overlayDx = 0;
+    BYTE overlayAlpha = 255;
+    int delayCs = 6;
 };
+
+static GroupData MkGroup(const wchar_t* name, int grid,
+    const std::vector<std::pair<const wchar_t*, const wchar_t*>>& apps,
+    int glass = 0xFFFFFF, bool hideName = false)
+{
+    GroupData g;
+    g.id = name;
+    g.name = name;
+    g.gridSize = grid;
+    g.showOverflow = true;
+    g.glassColor = glass;
+    g.hideName = hideName;
+    for (auto& a : apps)
+    {
+        ShortcutInfo si;
+        si.name = a.first;
+        si.lnkPath = a.second;
+        si.targetPath = a.second;
+        g.shortcuts.push_back(si);
+    }
+    return g;
+}
+
+static WidgetRenderer::MenuRenderItem MI(const wchar_t* text, bool check = false,
+    bool dis = false, bool sub = false, wchar_t glyph = 0)
+{
+    WidgetRenderer::MenuRenderItem it;
+    it.text = text ? text : L"";
+    it.checked = check;
+    it.disabled = dis;
+    it.hasSubmenu = sub;
+    it.glyph = glyph;
+    return it;
+}
+
+static WidgetRenderer::MenuRenderItem MSep()
+{
+    WidgetRenderer::MenuRenderItem it;
+    it.separator = true;
+    return it;
+}
 
 int wmain(int argc, wchar_t** argv)
 {
@@ -96,30 +135,13 @@ int wmain(int argc, wchar_t** argv)
     }
     r.SetDeferIcons(false);
 
-    auto mkGroup = [](const wchar_t* name, int grid,
-                      const std::vector<std::pair<const wchar_t*, const wchar_t*>>& apps) {
-        GroupData g;
-        g.id = name;
-        g.name = name;
-        g.gridSize = grid;
-        g.showOverflow = true;
-        for (auto& a : apps)
-        {
-            ShortcutInfo si;
-            si.name = a.first;
-            si.lnkPath = a.second;
-            si.targetPath = a.second;
-            g.shortcuts.push_back(si);
-        }
-        return g;
-    };
-    GroupData gDemo = mkGroup(L"Demo", 2, {
+    GroupData gDemo = MkGroup(L"Demo", 2, {
         { L"Notepad", L"C:\\Windows\\System32\\notepad.exe" },
         { L"Paint", L"C:\\Windows\\System32\\mspaint.exe" },
         { L"Console", L"C:\\Windows\\System32\\cmd.exe" },
         { L"Explorer", L"C:\\Windows\\explorer.exe" },
     });
-    GroupData gBig = mkGroup(L"Tools", 2, {
+    GroupData gTall = MkGroup(L"Tools", 2, {
         { L"Notepad", L"C:\\Windows\\System32\\notepad.exe" },
         { L"Paint", L"C:\\Windows\\System32\\mspaint.exe" },
         { L"Console", L"C:\\Windows\\System32\\cmd.exe" },
@@ -127,8 +149,35 @@ int wmain(int argc, wchar_t** argv)
         { L"Registry", L"C:\\Windows\\System32\\regedit.exe" },
         { L"TaskMgr", L"C:\\Windows\\System32\\taskmgr.exe" },
         { L"SysInfo", L"C:\\Windows\\System32\\msinfo32.exe" },
+        { L"Charmap", L"C:\\Windows\\System32\\charmap.exe" },
+        { L"Snip", L"C:\\Windows\\System32\\SnippingTool.exe" },
+        { L"Console2", L"C:\\Windows\\System32\\mmc.exe" },
     });
-    GroupData gGrid = mkGroup(L"Grid", 3, {
+    GroupData gBlue = MkGroup(L"Demo", 2, {
+        { L"Notepad", L"C:\\Windows\\System32\\notepad.exe" },
+        { L"Paint", L"C:\\Windows\\System32\\mspaint.exe" },
+        { L"Console", L"C:\\Windows\\System32\\cmd.exe" },
+        { L"Explorer", L"C:\\Windows\\explorer.exe" },
+    }, 0x0078D4);
+    GroupData gTeal = MkGroup(L"Demo", 2, {
+        { L"Notepad", L"C:\\Windows\\System32\\notepad.exe" },
+        { L"Paint", L"C:\\Windows\\System32\\mspaint.exe" },
+        { L"Console", L"C:\\Windows\\System32\\cmd.exe" },
+        { L"Explorer", L"C:\\Windows\\explorer.exe" },
+    }, 0x038387);
+    GroupData gPurple = MkGroup(L"Demo", 2, {
+        { L"Notepad", L"C:\\Windows\\System32\\notepad.exe" },
+        { L"Paint", L"C:\\Windows\\System32\\mspaint.exe" },
+        { L"Console", L"C:\\Windows\\System32\\cmd.exe" },
+        { L"Explorer", L"C:\\Windows\\explorer.exe" },
+    }, 0x744DA9);
+    GroupData gNoName = MkGroup(L"Demo", 2, {
+        { L"Notepad", L"C:\\Windows\\System32\\notepad.exe" },
+        { L"Paint", L"C:\\Windows\\System32\\mspaint.exe" },
+        { L"Console", L"C:\\Windows\\System32\\cmd.exe" },
+        { L"Explorer", L"C:\\Windows\\explorer.exe" },
+    }, 0xFFFFFF, true);
+    GroupData gGrid = MkGroup(L"Grid", 3, {
         { L"Notepad", L"C:\\Windows\\System32\\notepad.exe" },
         { L"Paint", L"C:\\Windows\\System32\\mspaint.exe" },
         { L"Console", L"C:\\Windows\\System32\\cmd.exe" },
@@ -141,129 +190,169 @@ int wmain(int argc, wchar_t** argv)
     });
 
     WidgetRenderContext ctx;
-    RenderedBitmap wPlain = r.RenderWidget(gDemo, ctx, 0, false);
-    RenderedBitmap wG1 = r.RenderWidget(gDemo, ctx, 90, false);
-    RenderedBitmap wG2 = r.RenderWidget(gDemo, ctx, 170, false);
-    RenderedBitmap wGlow = r.RenderWidget(gDemo, ctx, 255, false);
-    RenderedBitmap wSel = r.RenderWidget(gDemo, ctx, 0, true);
-    RenderedBitmap wBig = r.RenderWidget(gBig, ctx, 0, false);
-    RenderedBitmap wGrid = r.RenderWidget(gGrid, ctx, 0, false);
-    RenderedBitmap pb = r.RenderPopup(gDemo, -1);
-    std::vector<RenderedBitmap> pbHov;
+    std::vector<HBITMAP> owned;
+    auto keep = [&](RenderedBitmap b) -> HBITMAP {
+        if (b.hBitmap) owned.push_back(b.hBitmap);
+        return b.hBitmap;
+    };
+    HBITMAP wPlain = keep(r.RenderWidget(gDemo, ctx, 0, false));
+    HBITMAP wG1 = keep(r.RenderWidget(gDemo, ctx, 90, false));
+    HBITMAP wG2 = keep(r.RenderWidget(gDemo, ctx, 175, false));
+    HBITMAP wGlow = keep(r.RenderWidget(gDemo, ctx, 255, false));
+    HBITMAP wSel = keep(r.RenderWidget(gDemo, ctx, 0, true));
+    HBITMAP wBlue = keep(r.RenderWidget(gBlue, ctx, 0, false));
+    HBITMAP wTeal = keep(r.RenderWidget(gTeal, ctx, 0, false));
+    HBITMAP wPurple = keep(r.RenderWidget(gPurple, ctx, 0, false));
+    HBITMAP wNoName = keep(r.RenderWidget(gNoName, ctx, 0, false));
+    HBITMAP wGrid = keep(r.RenderWidget(gGrid, ctx, 0, false));
+    HBITMAP wTall = keep(r.RenderWidget(gTall, ctx, 0, false));
+    HBITMAP pb = keep(r.RenderPopup(gDemo, -1));
+    std::vector<HBITMAP> pbHov;
     for (int i = 0; i < 4; i++)
-        pbHov.push_back(r.RenderPopup(gDemo, i));
-    RenderedBitmap pbBig = r.RenderPopup(gBig, 5);
-    if (!wPlain.hBitmap || !pb.hBitmap)
+        pbHov.push_back(keep(r.RenderPopup(gDemo, i)));
+    // Tall popup with limited viewport for scroll demo.
+    HBITMAP pbT0 = keep(r.RenderPopup(gTall, -1, 0, 0, 0, 220));
+    HBITMAP pbT1 = keep(r.RenderPopup(gTall, -1, 0, 0, 90, 220));
+    HBITMAP pbT2 = keep(r.RenderPopup(gTall, -1, 0, 0, 180, 220));
+    HBITMAP pbT3 = keep(r.RenderPopup(gTall, 7, 0, 0, 260, 220));
+    if (!wPlain || !pb)
     {
         wprintf(L"render failed\n");
         return 4;
     }
 
-    // Tray-style menu, same items as the real tray menu.
+    // Widget context menu: checkmark, submenu chevrons, danger item.
+    std::vector<WidgetRenderer::MenuRenderItem> ctx2;
+    ctx2.push_back(MI(L"Open"));
+    ctx2.push_back(MI(L"Rename"));
+    ctx2.push_back(MI(L"Hide name", true));
+    ctx2.push_back(MI(L"Sorting", false, false, true));
+    ctx2.push_back(MI(L"Color", false, false, true));
+    ctx2.push_back(MI(L"Grid size", false, false, true));
+    ctx2.push_back(MSep());
+    ctx2.push_back(MI(L"Ungroup"));
+    ctx2.push_back(MI(L"Delete group"));
+    HBITMAP mbCtx = keep(r.RenderMenu(ctx2, -1, -1, 0, 0, true));
+    HBITMAP mbCtxH = keep(r.RenderMenu(ctx2, 4, -1, 0, 0, true));
+
+    // Command-bar menu with glyphs.
+    std::vector<WidgetRenderer::MenuRenderItem> cmds;
+    cmds.push_back(MI(L"Cut", false, false, false, (wchar_t)0xE8C6));
+    cmds.push_back(MI(L"Copy", false, false, false, (wchar_t)0xE8C8));
+    cmds.push_back(MI(L"Delete", false, false, false, (wchar_t)0xE74D));
+    std::vector<WidgetRenderer::MenuRenderItem> files;
+    files.push_back(MI(L"a.lnk"));
+    files.push_back(MI(L"b.lnk"));
+    HBITMAP mbCmd = keep(r.RenderMenu(cmds, files, -1, -1, 0, -1, 0, 0, true));
+    HBITMAP mbCmdH = keep(r.RenderMenu(cmds, files, 1, -1, 1, -1, 0, 0, true));
+
+    // Tray-style menu.
     std::vector<WidgetRenderer::MenuRenderItem> items;
     {
         WidgetRenderer::MenuRenderItem t;
         t.text = L"Shortcut Grouper"; t.isTitle = true;
         items.push_back(t);
     }
-    {
-        WidgetRenderer::MenuRenderItem s;
-        s.separator = true;
-        items.push_back(s);
-    }
+    items.push_back(MSep());
     const wchar_t* names[] = {
         L"Search", L"Hide widgets", L"Refresh", L"Settings", L"Check for updates",
     };
-    for (auto n : names)
-    {
-        WidgetRenderer::MenuRenderItem it;
-        it.text = n;
-        items.push_back(it);
-    }
-    {
-        WidgetRenderer::MenuRenderItem s;
-        s.separator = true;
-        items.push_back(s);
-    }
-    {
-        WidgetRenderer::MenuRenderItem it;
-        it.text = L"Exit";
-        items.push_back(it);
-    }
-    RenderedBitmap mb = r.RenderMenu(items, -1, -1, 0, 0, true);
-    RenderedBitmap mbH3 = r.RenderMenu(items, 3, -1, 0, 0, true);
-    RenderedBitmap mbH5 = r.RenderMenu(items, 5, -1, 0, 0, true);
-    RenderedBitmap mbH6 = r.RenderMenu(items, 6, -1, 0, 0, true);
-    if (!mb.hBitmap)
+    for (auto n : names) items.push_back(MI(n));
+    items.push_back(MSep());
+    items.push_back(MI(L"Exit"));
+    HBITMAP mb = keep(r.RenderMenu(items, -1, -1, 0, 0, true));
+    HBITMAP mbH2 = keep(r.RenderMenu(items, 2, -1, 0, 0, true));
+    HBITMAP mbH4 = keep(r.RenderMenu(items, 4, -1, 0, 0, true));
+    HBITMAP mbH6 = keep(r.RenderMenu(items, 6, -1, 0, 0, true));
+    if (!mb)
     {
         wprintf(L"menu render failed\n");
         return 4;
     }
 
     int ww = 0, wh = 0, pw = 0, ph = 0, mw = 0, mh = 0;
-    int pbw = 0, pbh = 0;
-    BitmapSize(wPlain.hBitmap, ww, wh);
-    BitmapSize(pb.hBitmap, pw, ph);
-    BitmapSize(mb.hBitmap, mw, mh);
-    BitmapSize(pbBig.hBitmap, pbw, pbh);
-    const int sideW = pw > mw ? pw : mw;
+    BitmapSize(wPlain, ww, wh);
+    BitmapSize(pb, pw, ph);
+    BitmapSize(mb, mw, mh);
+    int tallest = ph;
+    {
+        int w = 0, h = 0;
+        if (BitmapSize(pbT2, w, h) && h > tallest) tallest = h;
+        if (BitmapSize(mbCmd, w, h) && h > tallest) tallest = h;
+        if (BitmapSize(mbCtx, w, h) && h > tallest) tallest = h;
+    }
+    int sideW = pw > mw ? pw : mw;
     const int CW = 60 + ww + 16 + sideW + 60;
     int contentH = ph > mh ? ph : mh;
-    if (pbh > contentH) contentH = pbh;
+    if (tallest > contentH) contentH = tallest;
     if (wh > contentH) contentH = wh;
     const int CH = contentH + 80;
     const int wx = 50, wy = (CH - wh) / 2;
     const int px = wx + ww + 16, py = (CH - ph) / 2;
-    const int pbx = wx + ww + 16, pby = (CH - pbh) / 2;
-    SIZE msz = r.MeasureMenu(items);
-    const int mx = wx + ww + 16, my = (CH - msz.cy) / 2;
-    wprintf(L"widget %dx%d popup %dx%d bigpopup %dx%d menu %dx%d canvas %dx%d\n",
-        ww, wh, pw, ph, pbw, pbh, mw, mh, CW, CH);
+    wprintf(L"canvas %dx%d\n", CW, CH);
 
     std::vector<Key> keys;
-    auto K = [&](HBITMAP w, HBITMAP p, int dx, BYTE pa,
-                 HBITMAP m, BYTE ma, int d) {
+    auto K = [&](HBITMAP w, HBITMAP o, bool isMenu, int dx, BYTE a, int d) {
         Key k;
-        k.widget = w; k.popup = p; k.popupDx = dx; k.popupAlpha = pa;
-        k.menu = m; k.menuAlpha = ma; k.delayCs = d;
+        k.widget = w; k.overlay = o; k.overlayIsMenu = isMenu;
+        k.overlayDx = dx; k.overlayAlpha = a; k.delayCs = d;
         keys.push_back(k);
     };
-    HBITMAP W0 = wPlain.hBitmap, WG1 = wG1.hBitmap, WG2 = wG2.hBitmap,
-            WG = wGlow.hBitmap, WS = wSel.hBitmap,
-            WB = wBig.hBitmap, W3 = wGrid.hBitmap;
-    HBITMAP P = pb.hBitmap, PB = pbBig.hBitmap;
-    HBITMAP M = mb.hBitmap;
-    // 1. Idle, glow ramp (smooth hover-in).
-    K(W0, nullptr, 0, 0, nullptr, 0, 55);
-    K(WG1, nullptr, 0, 0, nullptr, 0, 4);
-    K(WG2, nullptr, 0, 0, nullptr, 0, 4);
-    K(WG, nullptr, 0, 0, nullptr, 0, 35);
-    // 2. Popup slides + fades in (4 smooth steps).
-    K(WG, P, -pw + 30, 80, nullptr, 0, 4);
-    K(WG, P, -pw * 2 / 3, 140, nullptr, 0, 4);
-    K(WG, P, -pw / 3, 200, nullptr, 0, 4);
-    K(W0, P, 0, 255, nullptr, 0, 65);
+    auto W = [&](HBITMAP w, int d) { K(w, nullptr, false, 0, 0, d); };
+    auto P = [&](HBITMAP w, HBITMAP p, int dx, BYTE a, int d) {
+        K(w, p, false, dx, a, d);
+    };
+    auto M = [&](HBITMAP m, BYTE a, int d) {
+        K(nullptr, m, true, 0, a, d);
+    };
+    // 1. Idle + glow ramp.
+    W(wPlain, 150);
+    W(wG1, 4); W(wG2, 4); W(wGlow, 80);
+    // 2. Popup slides + fades in.
+    P(wGlow, pb, -pw + 30, 80, 4);
+    P(wGlow, pb, -pw * 2 / 3, 140, 4);
+    P(wGlow, pb, -pw / 3, 200, 4);
+    P(wPlain, pb, 0, 255, 200);
     // 3. Row hover walks the whole list.
-    K(W0, pbHov[0].hBitmap, 0, 255, nullptr, 0, 22);
-    K(W0, pbHov[1].hBitmap, 0, 255, nullptr, 0, 22);
-    K(W0, pbHov[2].hBitmap, 0, 255, nullptr, 0, 22);
-    K(W0, pbHov[3].hBitmap, 0, 255, nullptr, 0, 45);
-    // 4. Overflow group (+3 badge) and its full popup.
-    K(WB, nullptr, 0, 0, nullptr, 0, 55);
-    K(WB, PB, 0, 255, nullptr, 0, 75);
-    // 5. 3x3 grid widget, then selected state.
-    K(W3, nullptr, 0, 0, nullptr, 0, 60);
-    K(WS, nullptr, 0, 0, nullptr, 0, 55);
-    // 6. Popup fades out, menu fades in.
-    K(W0, P, 0, 110, nullptr, 0, 4);
-    K(nullptr, nullptr, 0, 0, M, 120, 4);
-    K(nullptr, nullptr, 0, 0, M, 255, 20);
-    // 7. Menu hover walks, hold, fade out.
-    K(nullptr, nullptr, 0, 0, mbH3.hBitmap, 255, 25);
-    K(nullptr, nullptr, 0, 0, mbH5.hBitmap, 255, 25);
-    K(nullptr, nullptr, 0, 0, mbH6.hBitmap, 255, 50);
-    K(nullptr, nullptr, 0, 0, M, 110, 4);
-    K(W0, nullptr, 0, 0, nullptr, 0, 55);
+    P(wPlain, pbHov[0], 0, 255, 22);
+    P(wPlain, pbHov[1], 0, 255, 22);
+    P(wPlain, pbHov[2], 0, 255, 22);
+    P(wPlain, pbHov[3], 0, 255, 120);
+    // 4. Tall popup scrolls.
+    P(wTall, pbT0, 0, 255, 120);
+    P(wTall, pbT1, 0, 255, 18);
+    P(wTall, pbT2, 0, 255, 18);
+    P(wTall, pbT3, 0, 255, 120);
+    P(wTall, pbT1, 0, 255, 18);
+    P(wTall, pbT0, 0, 255, 120);
+    // 5. Overflow badge group + full popup.
+    P(wTall, nullptr, 0, 0, 150);
+    // (wTall already shows +6 badge.)
+    // 6. Glass colors, hideName, 3x3 grid, selected.
+    W(wBlue, 90); W(wTeal, 90); W(wPurple, 120);
+    W(wNoName, 80);
+    W(wGrid, 100);
+    W(wSel, 100);
+    // 7. Popup fades out, context menu (check + chevrons) fades in.
+    P(wPlain, pb, 0, 110, 5);
+    M(mbCtx, 120, 5);
+    M(mbCtx, 255, 60);
+    M(mbCtxH, 255, 90);
+    M(mbCtx, 110, 5);
+    // 8. Command-bar menu with glyphs.
+    M(mbCmd, 130, 5);
+    M(mbCmd, 255, 60);
+    M(mbCmdH, 255, 90);
+    M(mbCmd, 110, 5);
+    // 9. Tray menu: in, hover walk, hold, out.
+    M(mb, 130, 5);
+    M(mb, 255, 60);
+    M(mbH2, 255, 40);
+    M(mbH4, 255, 40);
+    M(mbH6, 255, 250);
+    M(mb, 110, 5);
+    // 10. Back to idle.
+    W(wPlain, 200);
 
     CLSID gifClsid;
     if (GetEncoderClsid(L"image/gif", &gifClsid) < 0)
@@ -300,19 +389,14 @@ int wmain(int argc, wchar_t** argv)
             BitmapSize(k.widget, w, h);
             AlphaBlit(hdcM, wx, (CH - h) / 2, w, h, k.widget, 255);
         }
-        if (k.popup)
+        if (k.overlay)
         {
             int w = 0, h = 0;
-            BitmapSize(k.popup, w, h);
-            int isBig = (k.popup == PB);
-            AlphaBlit(hdcM, (isBig ? pbx : px) + k.popupDx,
-                (isBig ? pby : py), w, h, k.popup, k.popupAlpha);
-        }
-        if (k.menu)
-        {
-            int w = 0, h = 0;
-            BitmapSize(k.menu, w, h);
-            AlphaBlit(hdcM, mx, my, w, h, k.menu, k.menuAlpha);
+            BitmapSize(k.overlay, w, h);
+            int ox = k.overlayIsMenu ? (wx + ww + 16) : (px + k.overlayDx);
+            // Vertically center each overlay by its own height.
+            int oy = (CH - h) / 2;
+            AlphaBlit(hdcM, ox, oy, w, h, k.overlay, k.overlayAlpha);
         }
         SelectObject(hdcM, hOld);
         DeleteDC(hdcM);
@@ -381,20 +465,7 @@ int wmain(int argc, wchar_t** argv)
         delete multi;
     }
 
-    DeleteObject(wPlain.hBitmap);
-    DeleteObject(wG1.hBitmap);
-    DeleteObject(wG2.hBitmap);
-    DeleteObject(wGlow.hBitmap);
-    DeleteObject(wSel.hBitmap);
-    DeleteObject(wBig.hBitmap);
-    DeleteObject(wGrid.hBitmap);
-    DeleteObject(pb.hBitmap);
-    for (auto& h : pbHov) DeleteObject(h.hBitmap);
-    DeleteObject(pbBig.hBitmap);
-    DeleteObject(mb.hBitmap);
-    DeleteObject(mbH3.hBitmap);
-    DeleteObject(mbH5.hBitmap);
-    DeleteObject(mbH6.hBitmap);
+    for (HBITMAP b : owned) DeleteObject(b);
     r.Shutdown();
     Gdiplus::GdiplusShutdown(gdiToken);
     if (SUCCEEDED(hrCo) || hrCo == S_FALSE) CoUninitialize();
@@ -403,6 +474,10 @@ int wmain(int argc, wchar_t** argv)
         wprintf(L"gif failed: %d\n", (int)st);
         return 7;
     }
-    wprintf(L"done: %s (%zu frames)\n", outPath, keys.size());
+    // Total duration estimate.
+    int totalCs = 0;
+    for (auto& k : keys) totalCs += k.delayCs;
+    wprintf(L"done: %s (%zu frames, ~%d.%ds)\n", outPath, keys.size(),
+        totalCs / 100, totalCs % 100);
     return 0;
 }
