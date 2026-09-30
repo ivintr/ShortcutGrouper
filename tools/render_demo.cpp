@@ -112,8 +112,7 @@ static bool AddGifLoop(const wchar_t* path)
 }
 
 // One animation keyframe: widget + optional overlay (popup or menu)
-// + optional drag ghost (file icon flying onto the widget, drawn live
-// with its alpha mask — like a real drag image).
+// + optional drag ghost + optional marquee lasso rect.
 struct Key {
     HBITMAP widget = nullptr;
     int widgetDx = 0;
@@ -124,6 +123,8 @@ struct Key {
     BYTE overlayAlpha = 255;
     bool ghost = false;
     int ghostX = 0, ghostY = 0;
+    bool marquee = false;      // rubber-band lasso around the widget
+    int marqueePad = 0;        // extra padding beyond widget bounds
     int delayCs = 6;
 };
 
@@ -405,16 +406,22 @@ int wmain(int argc, wchar_t** argv)
     auto M = [&](HBITMAP m, BYTE a, int d) {
         K(nullptr, m, true, 0, a, d);
     };
+    auto MQ = [&](int pad, int d) {
+        Key k;
+        k.widget = wPlain; k.marquee = true; k.marqueePad = pad; k.delayCs = d;
+        keys.push_back(k);
+    };
     // 1. Idle + glow ramp.
     W(wPlain, 1800);
     W(wG1, 5); W(wG2, 5); W(wGlow, 500);
-    // 2. Popup slides + fades in (6 мелких шагов вместо 3 крупных —
-    // крупные шаги на 50мс и дают «мигание»).
-    P(wGlow, pb, -pw * 5 / 6, 70, 4);
-    P(wGlow, pb, -pw * 4 / 6, 110, 4);
-    P(wGlow, pb, -pw * 3 / 6, 150, 4);
-    P(wGlow, pb, -pw * 2 / 6, 190, 4);
-    P(wGlow, pb, -pw / 6, 225, 4);
+    // 2. Popup slides + fades in (8 мелких шагов — крупные дают вспышки).
+    P(wGlow, pb, -pw * 7 / 8, 60, 3);
+    P(wGlow, pb, -pw * 6 / 8, 95, 3);
+    P(wGlow, pb, -pw * 5 / 8, 130, 3);
+    P(wGlow, pb, -pw * 4 / 8, 165, 3);
+    P(wGlow, pb, -pw * 3 / 8, 195, 3);
+    P(wGlow, pb, -pw * 2 / 8, 220, 3);
+    P(wGlow, pb, -pw / 8, 240, 3);
     P(wPlain, pb, 0, 255, 1800);
     // 3. Row hover walks the whole list.
     P(wPlain, pbHov[0], 0, 255, 50);
@@ -435,13 +442,19 @@ int wmain(int argc, wchar_t** argv)
         }
         W(w5plain, 200); // группа обновилась: 5 ярлыков, бейдж +1
     }
-    // 3c. Перетаскивание самого виджета на новое место и обратно.
-    WMv(w5plain, 20, 8, 5);
-    WMv(w5plain, 40, 16, 5);
-    WMv(w5plain, 60, 24, 40);
-    WMv(w5plain, 40, 16, 5);
-    WMv(w5plain, 20, 8, 5);
-    WMv(w5plain, 0, 0, 40);
+    // 3c. Перетаскивание самого виджета на новое место и обратно (8 шагов).
+    WMv(w5plain, 8, 3, 4);
+    WMv(w5plain, 15, 6, 4);
+    WMv(w5plain, 23, 9, 4);
+    WMv(w5plain, 30, 12, 4);
+    WMv(w5plain, 38, 15, 4);
+    WMv(w5plain, 45, 18, 4);
+    WMv(w5plain, 53, 21, 4);
+    WMv(w5plain, 60, 24, 30);
+    WMv(w5plain, 45, 18, 4);
+    WMv(w5plain, 30, 12, 4);
+    WMv(w5plain, 15, 6, 4);
+    WMv(w5plain, 0, 0, 30);
     // 4. Tall popup scrolls down and back.
     P(wTall, pbT0, 0, 255, 500);
     P(wTall, pbT1, 0, 255, 40);
@@ -459,34 +472,53 @@ int wmain(int argc, wchar_t** argv)
     W(wBlue, 500); W(wTeal, 500); W(wPurple, 600);
     W(wNoName, 400);
     W(wGrid, 350);
-    W(wSel, 350);
-    // 7. Popup fades out (3 ступени), context menu fades in (3 ступени).
-    P(wPlain, pb, 0, 170, 4);
-    P(wPlain, pb, 0, 90, 4);
-    M(mbCtx, 90, 4);
-    M(mbCtx, 170, 4);
+    // 6b. Marquee lasso: рамка растёт вокруг виджета, виджет выбран.
+    MQ(4, 5);
+    MQ(12, 5);
+    MQ(20, 5);
+    MQ(28, 5);
+    W(wSel, 350); // лассо выбрало виджет
+    // 7. Popup fades out (5 ступеней), context menu fades in (5 ступеней).
+    P(wPlain, pb, 0, 210, 3);
+    P(wPlain, pb, 0, 160, 3);
+    P(wPlain, pb, 0, 110, 3);
+    P(wPlain, pb, 0, 60, 3);
+    M(mbCtx, 60, 3);
+    M(mbCtx, 110, 3);
+    M(mbCtx, 160, 3);
+    M(mbCtx, 210, 3);
     M(mbCtx, 255, 450);
     M(mbCtxH, 255, 450);
-    M(mbCtx, 170, 4);
-    M(mbCtx, 90, 4);
+    M(mbCtx, 210, 3);
+    M(mbCtx, 160, 3);
+    M(mbCtx, 110, 3);
+    M(mbCtx, 60, 3);
     // 8. Command-bar menu with glyphs.
-    M(mbCmd, 130, 4);
-    M(mbCmd, 200, 4);
+    M(mbCmd, 60, 3);
+    M(mbCmd, 110, 3);
+    M(mbCmd, 160, 3);
+    M(mbCmd, 210, 3);
     M(mbCmd, 255, 450);
     M(mbCmdH, 255, 450);
-    M(mbCmd, 170, 4);
-    M(mbCmd, 90, 4);
-    // 9. Tray menu: in, full hover walk, hold, out.
-    M(mb, 130, 4);
-    M(mb, 200, 4);
+    M(mbCmd, 210, 3);
+    M(mbCmd, 160, 3);
+    M(mbCmd, 110, 3);
+    M(mbCmd, 60, 3);
+    // 9. Tray menu: in (5 ступеней), full hover walk, hold, out (5 ступеней).
+    M(mb, 60, 3);
+    M(mb, 110, 3);
+    M(mb, 160, 3);
+    M(mb, 210, 3);
     M(mb, 255, 450);
     M(mbH2, 255, 50);
     M(mbH3, 255, 50);
     M(mbH4, 255, 50);
     M(mbH5, 255, 50);
     M(mbH6, 255, 1200);
-    M(mb, 170, 4);
-    M(mb, 90, 4);
+    M(mb, 210, 3);
+    M(mb, 160, 3);
+    M(mb, 110, 3);
+    M(mb, 60, 3);
     // 10. Back to idle.
     W(wPlain, 3500);
 
@@ -537,6 +569,17 @@ int wmain(int argc, wchar_t** argv)
         }
         if (k.ghost && hGhost)
             DrawIconEx(hdcM, k.ghostX, k.ghostY, hGhost, 48, 48, 0, nullptr, DI_NORMAL);
+        if (k.marquee)
+        {
+            // Резиновое лассо как в приложении: полупрозрачная заливка +
+            // яркая граница вокруг виджета (растёт с marqueePad).
+            Gdiplus::Graphics gp(hdcM);
+            int m = k.marqueePad;
+            Gdiplus::SolidBrush fill(Gdiplus::Color(40, 51, 153, 255));
+            Gdiplus::Pen pen(Gdiplus::Color(220, 51, 153, 255), 2.0f);
+            gp.FillRectangle(&fill, wx - m, wy - m, ww + 2 * m, wh + 2 * m);
+            gp.DrawRectangle(&pen, wx - m, wy - m, ww + 2 * m, wh + 2 * m);
+        }
         SelectObject(hdcM, hOld);
         DeleteDC(hdcM);
         ReleaseDC(nullptr, hdcS);
