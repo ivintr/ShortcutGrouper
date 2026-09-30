@@ -262,7 +262,9 @@ int wmain(int argc, wchar_t** argv)
     items.push_back(MI(L"Exit"));
     HBITMAP mb = keep(r.RenderMenu(items, -1, -1, 0, 0, true));
     HBITMAP mbH2 = keep(r.RenderMenu(items, 2, -1, 0, 0, true));
+    HBITMAP mbH3 = keep(r.RenderMenu(items, 3, -1, 0, 0, true));
     HBITMAP mbH4 = keep(r.RenderMenu(items, 4, -1, 0, 0, true));
+    HBITMAP mbH5 = keep(r.RenderMenu(items, 5, -1, 0, 0, true));
     HBITMAP mbH6 = keep(r.RenderMenu(items, 6, -1, 0, 0, true));
     if (!mb)
     {
@@ -306,53 +308,58 @@ int wmain(int argc, wchar_t** argv)
         K(nullptr, m, true, 0, a, d);
     };
     // 1. Idle + glow ramp.
-    W(wPlain, 150);
-    W(wG1, 4); W(wG2, 4); W(wGlow, 80);
+    W(wPlain, 500);
+    W(wG1, 5); W(wG2, 5); W(wGlow, 200);
     // 2. Popup slides + fades in.
-    P(wGlow, pb, -pw + 30, 80, 4);
-    P(wGlow, pb, -pw * 2 / 3, 140, 4);
-    P(wGlow, pb, -pw / 3, 200, 4);
-    P(wPlain, pb, 0, 255, 200);
+    P(wGlow, pb, -pw + 30, 80, 5);
+    P(wGlow, pb, -pw * 2 / 3, 140, 5);
+    P(wGlow, pb, -pw / 3, 200, 5);
+    P(wPlain, pb, 0, 255, 700);
     // 3. Row hover walks the whole list.
-    P(wPlain, pbHov[0], 0, 255, 22);
-    P(wPlain, pbHov[1], 0, 255, 22);
-    P(wPlain, pbHov[2], 0, 255, 22);
-    P(wPlain, pbHov[3], 0, 255, 120);
-    // 4. Tall popup scrolls.
-    P(wTall, pbT0, 0, 255, 120);
-    P(wTall, pbT1, 0, 255, 18);
-    P(wTall, pbT2, 0, 255, 18);
-    P(wTall, pbT3, 0, 255, 120);
-    P(wTall, pbT1, 0, 255, 18);
-    P(wTall, pbT0, 0, 255, 120);
+    P(wPlain, pbHov[0], 0, 255, 50);
+    P(wPlain, pbHov[1], 0, 255, 50);
+    P(wPlain, pbHov[2], 0, 255, 50);
+    P(wPlain, pbHov[3], 0, 255, 300);
+    // 4. Tall popup scrolls down and back.
+    P(wTall, pbT0, 0, 255, 250);
+    P(wTall, pbT1, 0, 255, 40);
+    P(wTall, pbT2, 0, 255, 40);
+    P(wTall, pbT3, 0, 255, 250);
+    P(wTall, pbT1, 0, 255, 40);
+    P(wTall, pbT0, 0, 255, 250);
+    P(wTall, pbT1, 0, 255, 40);
+    P(wTall, pbT2, 0, 255, 40);
+    P(wTall, pbT3, 0, 255, 250);
     // 5. Overflow badge group + full popup.
-    P(wTall, nullptr, 0, 0, 150);
+    P(wTall, nullptr, 0, 0, 450);
     // (wTall already shows +6 badge.)
     // 6. Glass colors, hideName, 3x3 grid, selected.
-    W(wBlue, 90); W(wTeal, 90); W(wPurple, 120);
-    W(wNoName, 80);
-    W(wGrid, 100);
-    W(wSel, 100);
+    W(wBlue, 200); W(wTeal, 200); W(wPurple, 350);
+    W(wNoName, 150);
+    W(wGrid, 200);
+    W(wSel, 200);
     // 7. Popup fades out, context menu (check + chevrons) fades in.
-    P(wPlain, pb, 0, 110, 5);
-    M(mbCtx, 120, 5);
-    M(mbCtx, 255, 60);
-    M(mbCtxH, 255, 90);
-    M(mbCtx, 110, 5);
+    P(wPlain, pb, 0, 110, 8);
+    M(mbCtx, 120, 8);
+    M(mbCtx, 255, 150);
+    M(mbCtxH, 255, 200);
+    M(mbCtx, 110, 8);
     // 8. Command-bar menu with glyphs.
-    M(mbCmd, 130, 5);
-    M(mbCmd, 255, 60);
-    M(mbCmdH, 255, 90);
-    M(mbCmd, 110, 5);
-    // 9. Tray menu: in, hover walk, hold, out.
-    M(mb, 130, 5);
-    M(mb, 255, 60);
-    M(mbH2, 255, 40);
-    M(mbH4, 255, 40);
-    M(mbH6, 255, 250);
-    M(mb, 110, 5);
+    M(mbCmd, 130, 8);
+    M(mbCmd, 255, 150);
+    M(mbCmdH, 255, 200);
+    M(mbCmd, 110, 8);
+    // 9. Tray menu: in, full hover walk, hold, out.
+    M(mb, 130, 8);
+    M(mb, 255, 250);
+    M(mbH2, 255, 50);
+    M(mbH3, 255, 50);
+    M(mbH4, 255, 50);
+    M(mbH5, 255, 50);
+    M(mbH6, 255, 450);
+    M(mb, 110, 8);
     // 10. Back to idle.
-    W(wPlain, 200);
+    W(wPlain, 1500);
 
     CLSID gifClsid;
     if (GetEncoderClsid(L"image/gif", &gifClsid) < 0)
