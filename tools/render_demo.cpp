@@ -520,7 +520,7 @@ int wmain(int argc, wchar_t** argv)
     M(mb, 110, 3);
     M(mb, 60, 3);
     // 10. Back to idle.
-    W(wPlain, 1500);
+    W(wPlain, 2000);
 
     CLSID gifClsid;
     if (GetEncoderClsid(L"image/gif", &gifClsid) < 0)
