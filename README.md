@@ -7,7 +7,7 @@ A Windows 11 shell extension that adds a **"Объединить в группу
 ## Screenshots
 
 ![Desktop folder widget with overflow badge](docs/screenshots/widget.png)
-![Expanded group popup with shortcut list](docs/screenshots/popup.png)
+![Demo: click a widget to expand the shortcut popup](docs/screenshots/demo.gif)
 
 ## Features
 
