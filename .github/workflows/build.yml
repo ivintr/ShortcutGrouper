@@ -23,6 +23,15 @@ jobs:
       - name: Build Release
         run: cmake --build build
 
+      - name: Static analysis (/analyze, informational)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          cmake -B build-an -G Ninja -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_CXX_FLAGS="/W4 /analyze" 2>&1 | Select-Object -Last 3
+          cmake --build build-an 2>&1 | Select-String -Pattern "warning C6" |
+            Select-Object -First 30
+
       - name: Verify artifacts
         shell: pwsh
         run: |
