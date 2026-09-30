@@ -1,5 +1,6 @@
-// render_demo (TEMP dev tool): renders widget + popup frames with the real
-// WidgetRenderer headless and assembles docs demo GIF. Not part of the app.
+// render_demo (dev tool): renders app UI with the real WidgetRenderer headless
+// and assembles docs demo GIF: widget -> popup slide+fade -> row hover ->
+// tray-style menu. Not part of the app.
 #include <Windows.h>
 #include <gdiplus.h>
 #include <shlwapi.h>
@@ -42,24 +43,37 @@ static int GetEncoderClsid(const wchar_t* mime, CLSID* out)
     return -1;
 }
 
-struct Frame {
-    int x, y;          // paste offset on canvas
-    HBITMAP bmp = nullptr;
-    int w = 0, h = 0;
-    int delayCs = 0;   // frame delay, 1/100 s
-};
-
-static bool BitmapSize(HBITMAP hbm, int& w, int& h, void*& bits, int& stride)
+static bool BitmapSize(HBITMAP hbm, int& w, int& h)
 {
     BITMAP bm = {};
     if (!hbm || GetObjectW(hbm, sizeof(bm), &bm) != sizeof(bm)) return false;
     if (!bm.bmBits || bm.bmWidth <= 0 || bm.bmHeight <= 0) return false;
     w = bm.bmWidth;
     h = abs(bm.bmHeight);
-    bits = bm.bmBits;
-    stride = bm.bmWidthBytes;
     return true;
 }
+
+static void AlphaBlit(HDC dst, int dx, int dy, int w, int h,
+    HBITMAP src, BYTE alpha)
+{
+    HDC mem = CreateCompatibleDC(dst);
+    HGDIOBJ old = SelectObject(mem, src);
+    BLENDFUNCTION bf = { AC_SRC_OVER, 0, alpha, AC_SRC_ALPHA };
+    GdiAlphaBlend(dst, dx, dy, w, h, mem, 0, 0, w, h, bf);
+    SelectObject(mem, old);
+    DeleteDC(mem);
+}
+
+// One animation keyframe.
+struct Key {
+    int widgetGlow = 0;    // -1 = hidden
+    HBITMAP popup = nullptr;
+    int popupDx = 0;       // slide offset (negative = tucked behind widget)
+    BYTE popupAlpha = 255;
+    HBITMAP menu = nullptr;
+    BYTE menuAlpha = 255;
+    int delayCs = 8;
+};
 
 int wmain(int argc, wchar_t** argv)
 {
@@ -102,36 +116,98 @@ int wmain(int argc, wchar_t** argv)
     }
 
     WidgetRenderContext ctx;
-    RenderedBitmap wb = r.RenderWidget(g, ctx, 0, false);
+    RenderedBitmap wPlain = r.RenderWidget(g, ctx, 0, false);
+    RenderedBitmap wGlow = r.RenderWidget(g, ctx, 220, false);
     RenderedBitmap pb = r.RenderPopup(g, -1);
-    RenderedBitmap pbHov = r.RenderPopup(g, 1);
-    if (!wb.hBitmap || !pb.hBitmap)
+    RenderedBitmap pbH2 = r.RenderPopup(g, 2);
+    RenderedBitmap pbH4 = r.RenderPopup(g, 4);
+    if (!wPlain.hBitmap || !pb.hBitmap)
     {
         wprintf(L"render failed\n");
         return 4;
     }
-    int ww = 0, wh = 0, pw = 0, ph = 0, hw = 0, hh = 0, s = 0;
-    void *wbBits = nullptr, *pbBits = nullptr, *hbBits = nullptr;
-    BitmapSize(wb.hBitmap, ww, wh, wbBits, s);
-    BitmapSize(pb.hBitmap, pw, ph, pbBits, s);
-    BitmapSize(pbHov.hBitmap, hw, hh, hbBits, s);
-    wprintf(L"widget %dx%d popup %dx%d\n", ww, wh, pw, ph);
 
-    // Canvas: dark backdrop, widget left, popup slides in from behind it.
-    const int CW = ww + pw + 120;
-    const int CH = (ph > wh ? ph : wh) + 80;
-    const int wx = 50, wy = (CH - wh) / 2;
-    const int pxFull = wx + ww + 16, py = (CH - ph) / 2;
-
-    struct Key { HBITMAP bmp; int dx; int delay; };
-    std::vector<Key> keys = {
-        { wb.hBitmap, 0, 70 },          // widget alone
-        { wb.hBitmap, 0, 25 },
-        { pb.hBitmap, -pw / 2, 10 },    // popup slides in (2 steps)
-        { pb.hBitmap, 0, 12 },
-        { pb.hBitmap, 0, 110 },         // hold
-        { pbHov.hBitmap, 0, 90 },       // hover highlight
+    // Tray-style menu, same items as the real tray menu.
+    std::vector<WidgetRenderer::MenuRenderItem> items;
+    {
+        WidgetRenderer::MenuRenderItem t;
+        t.text = L"Shortcut Grouper"; t.isTitle = true;
+        items.push_back(t);
+    }
+    {
+        WidgetRenderer::MenuRenderItem s;
+        s.separator = true;
+        items.push_back(s);
+    }
+    const wchar_t* names[] = {
+        L"Search", L"Hide widgets", L"Refresh", L"Settings", L"Check for updates",
     };
+    for (auto n : names)
+    {
+        WidgetRenderer::MenuRenderItem it;
+        it.text = n;
+        items.push_back(it);
+    }
+    {
+        WidgetRenderer::MenuRenderItem s;
+        s.separator = true;
+        items.push_back(s);
+    }
+    {
+        WidgetRenderer::MenuRenderItem it;
+        it.text = L"Exit";
+        items.push_back(it);
+    }
+    RenderedBitmap mb = r.RenderMenu(items, -1, -1, 0, 0, true);
+    RenderedBitmap mbHov = r.RenderMenu(items, 5, -1, 0, 0, true);
+    if (!mb.hBitmap)
+    {
+        wprintf(L"menu render failed\n");
+        return 4;
+    }
+
+    int ww = 0, wh = 0, pw = 0, ph = 0, mw = 0, mh = 0, dummy = 0;
+    BitmapSize(wPlain.hBitmap, ww, wh);
+    BitmapSize(pb.hBitmap, pw, ph);
+    BitmapSize(mb.hBitmap, mw, mh);
+
+    const int CW = 60 + ww + 16 + (pw > mw ? pw : mw) + 60;
+    int contentH = ph > mh ? ph : mh;
+    if (wh > contentH) contentH = wh;
+    const int CH = contentH + 80;
+    const int wx = 50, wy = (CH - wh) / 2;
+    const int px = wx + ww + 16, py = (CH - ph) / 2;
+    SIZE msz = r.MeasureMenu(items);
+    const int mx = wx + ww + 16, my = (CH - msz.cy) / 2;
+    wprintf(L"widget %dx%d popup %dx%d menu %dx%d canvas %dx%d\n",
+        ww, wh, pw, ph, mw, mh, CW, CH);
+
+    std::vector<Key> keys;
+    auto K = [&](int glow, HBITMAP p, int dx, BYTE pa,
+                 HBITMAP m, BYTE ma, int d) {
+        Key k;
+        k.widgetGlow = glow; k.popup = p; k.popupDx = dx; k.popupAlpha = pa;
+        k.menu = m; k.menuAlpha = ma; k.delayCs = d;
+        keys.push_back(k);
+    };
+    // 1. Widget idle, then hover glow.
+    K(0, nullptr, 0, 0, nullptr, 0, 60);
+    K(220, nullptr, 0, 0, nullptr, 0, 45);
+    // 2. Popup slides in + fades in.
+    K(220, pb.hBitmap, -pw + 20, 90, nullptr, 0, 5);
+    K(220, pb.hBitmap, -pw / 2, 160, nullptr, 0, 5);
+    K(220, pb.hBitmap, -20, 220, nullptr, 0, 5);
+    K(0, pb.hBitmap, 0, 255, nullptr, 0, 70);
+    // 3. Row hover walks down.
+    K(0, pbH2.hBitmap, 0, 255, nullptr, 0, 30);
+    K(0, pbH4.hBitmap, 0, 255, nullptr, 0, 55);
+    // 4. Popup fades, menu fades in.
+    K(0, pb.hBitmap, 0, 110, nullptr, 0, 5);
+    K(-1, nullptr, 0, 0, mb.hBitmap, 120, 5);
+    K(-1, nullptr, 0, 0, mb.hBitmap, 255, 25);
+    K(-1, nullptr, 0, 0, mbHov.hBitmap, 255, 70);
+    // 5. Back to idle widget.
+    K(0, nullptr, 0, 0, nullptr, 0, 50);
 
     CLSID gifClsid;
     if (GetEncoderClsid(L"image/gif", &gifClsid) < 0)
@@ -140,12 +216,12 @@ int wmain(int argc, wchar_t** argv)
         return 5;
     }
 
-    bool first = true;
     Gdiplus::Bitmap* multi = nullptr;
     Gdiplus::Status st = Gdiplus::Ok;
+    bool first = true;
     for (size_t fi = 0; fi < keys.size() && st == Gdiplus::Ok; fi++)
     {
-        // Compose frame with GDI.
+        const Key& k = keys[fi];
         HDC hdcS = GetDC(nullptr);
         HDC hdcM = CreateCompatibleDC(hdcS);
         BITMAPINFO bmi = {};
@@ -158,43 +234,37 @@ int wmain(int argc, wchar_t** argv)
         void* bits = nullptr;
         HBITMAP hFrame = CreateDIBSection(hdcM, &bmi, DIB_RGB_COLORS, &bits, nullptr, 0);
         HGDIOBJ hOld = SelectObject(hdcM, hFrame);
-        // Dark backdrop (#1b1b1b).
         HBRUSH bg = CreateSolidBrush(RGB(27, 27, 27));
         RECT rc = { 0, 0, CW, CH };
         FillRect(hdcM, &rc, bg);
         DeleteObject(bg);
-        // Widget.
+        if (k.widgetGlow >= 0)
+            AlphaBlit(hdcM, wx, wy, ww, wh,
+                k.widgetGlow > 0 ? wGlow.hBitmap : wPlain.hBitmap, 255);
+        if (k.popup)
         {
-            HDC hdcW = CreateCompatibleDC(hdcM);
-            HGDIOBJ oW = SelectObject(hdcW, wb.hBitmap);
-            BLENDFUNCTION bf = { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA };
-            GdiAlphaBlend(hdcM, wx, wy, ww, wh, hdcW, 0, 0, ww, wh, bf);
-            SelectObject(hdcW, oW);
-            DeleteDC(hdcW);
+            int w = 0, h = 0;
+            BitmapSize(k.popup, w, h);
+            AlphaBlit(hdcM, px + k.popupDx, py, w, h, k.popup, k.popupAlpha);
         }
-        // Popup (possibly slid).
+        if (k.menu)
         {
-            HBITMAP src = (keys[fi].bmp == pbHov.hBitmap) ? pbHov.hBitmap : pb.hBitmap;
-            int px = pxFull + keys[fi].dx;
-            HDC hdcP = CreateCompatibleDC(hdcM);
-            HGDIOBJ oP = SelectObject(hdcP, src);
-            BLENDFUNCTION bf = { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA };
-            GdiAlphaBlend(hdcM, px, py, pw, ph, hdcP, 0, 0, pw, ph, bf);
-            SelectObject(hdcP, oP);
-            DeleteDC(hdcP);
+            int w = 0, h = 0;
+            BitmapSize(k.menu, w, h);
+            AlphaBlit(hdcM, mx, my, w, h, k.menu, k.menuAlpha);
         }
         SelectObject(hdcM, hOld);
         DeleteDC(hdcM);
         ReleaseDC(nullptr, hdcS);
 
-        // HBITMAP -> GDI+ Bitmap + per-frame delay.
         Gdiplus::Bitmap* frame = Gdiplus::Bitmap::FromHBITMAP(hFrame, nullptr);
         DeleteObject(hFrame);
         if (!frame || frame->GetLastStatus() != Gdiplus::Ok)
         {
             delete frame;
             wprintf(L"frame convert failed\n");
-            return 6;
+            st = Gdiplus::GenericError;
+            break;
         }
         size_t propSize = sizeof(Gdiplus::PropertyItem) + sizeof(ULONG);
         Gdiplus::PropertyItem* delay = (Gdiplus::PropertyItem*)malloc(propSize);
@@ -202,47 +272,37 @@ int wmain(int argc, wchar_t** argv)
         delay->length = sizeof(ULONG);
         delay->type = 4; // PropertyTagTypeLong
         delay->value = delay + 1;
-        *(ULONG*)delay->value = (ULONG)keys[fi].delay;
+        *(ULONG*)delay->value = (ULONG)k.delayCs;
         frame->SetPropertyItem(delay);
         free(delay);
 
-        Gdiplus::Status st2;
+        Gdiplus::EncoderParameters ep;
+        ep.Count = 1;
+        ep.Parameter[0].Guid = Gdiplus::EncoderSaveFlag;
+        ep.Parameter[0].Type = Gdiplus::EncoderParameterValueTypeLong;
+        ep.Parameter[0].NumberOfValues = 1;
         if (first)
         {
-            Gdiplus::EncoderParameters ep;
-            ep.Count = 1;
-            ep.Parameter[0].Guid = Gdiplus::EncoderSaveFlag;
-            ep.Parameter[0].Type = Gdiplus::EncoderParameterValueTypeLong;
-            ep.Parameter[0].NumberOfValues = 1;
             ULONG v = Gdiplus::EncoderValueMultiFrame;
             ep.Parameter[0].Value = &v;
-            st2 = frame->Save(outPath, &gifClsid, &ep);
-            if (st2 == Gdiplus::Ok)
+            st = frame->Save(outPath, &gifClsid, &ep);
+            if (st == Gdiplus::Ok)
             {
                 multi = frame;
-                frame = nullptr; // живёт до конца (на нём SaveAdd/Flush)
+                frame = nullptr;
                 first = false;
             }
         }
         else
         {
-            Gdiplus::EncoderParameters ep;
-            ep.Count = 1;
-            ep.Parameter[0].Guid = Gdiplus::EncoderSaveFlag;
-            ep.Parameter[0].Type = Gdiplus::EncoderParameterValueTypeLong;
-            ep.Parameter[0].NumberOfValues = 1;
             ULONG v = Gdiplus::EncoderValueFrameDimensionTime;
             ep.Parameter[0].Value = &v;
-            st2 = multi->SaveAdd(frame, &ep);
+            st = multi->SaveAdd(frame, &ep);
         }
         delete frame;
-        if (st2 != Gdiplus::Ok)
-        {
-            wprintf(L"gif save failed at frame %zu: %d\n", fi, (int)st2);
-            st = st2;
-        }
+        if (st != Gdiplus::Ok)
+            wprintf(L"gif save failed at frame %zu: %d\n", fi, (int)st);
     }
-    // Flush multi-frame.
     if (st == Gdiplus::Ok && multi)
     {
         Gdiplus::EncoderParameters ep;
@@ -255,23 +315,26 @@ int wmain(int argc, wchar_t** argv)
         st = multi->SaveAdd(&ep);
         delete multi;
     }
-    if (st != Gdiplus::Ok)
+    else
     {
-        wprintf(L"gif flush failed: %d\n", (int)st);
-        DeleteObject(wb.hBitmap);
-        DeleteObject(pb.hBitmap);
-        DeleteObject(pbHov.hBitmap);
-        r.Shutdown();
-        Gdiplus::GdiplusShutdown(gdiToken);
-        return 7;
+        delete multi;
     }
 
-    DeleteObject(wb.hBitmap);
+    DeleteObject(wPlain.hBitmap);
+    DeleteObject(wGlow.hBitmap);
     DeleteObject(pb.hBitmap);
-    DeleteObject(pbHov.hBitmap);
+    DeleteObject(pbH2.hBitmap);
+    DeleteObject(pbH4.hBitmap);
+    DeleteObject(mb.hBitmap);
+    DeleteObject(mbHov.hBitmap);
     r.Shutdown();
     Gdiplus::GdiplusShutdown(gdiToken);
     if (SUCCEEDED(hrCo) || hrCo == S_FALSE) CoUninitialize();
+    if (st != Gdiplus::Ok)
+    {
+        wprintf(L"gif failed: %d\n", (int)st);
+        return 7;
+    }
     wprintf(L"done: %s\n", outPath);
     return 0;
 }
