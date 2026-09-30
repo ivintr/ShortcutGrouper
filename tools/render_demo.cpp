@@ -111,15 +111,45 @@ static bool AddGifLoop(const wchar_t* path)
     return wrote == data.size();
 }
 
-// One animation keyframe: widget + optional overlay (popup or menu).
+// One animation keyframe: widget + optional overlay (popup or menu)
+// + optional drag ghost (file icon flying onto the widget, drawn live
+// with its alpha mask — like a real drag image).
 struct Key {
     HBITMAP widget = nullptr;
+    int widgetDx = 0;
+    int widgetDy = 0;
     HBITMAP overlay = nullptr; // popup or menu bitmap
     bool overlayIsMenu = false;
     int overlayDx = 0;
     BYTE overlayAlpha = 255;
+    bool ghost = false;
+    int ghostX = 0, ghostY = 0;
     int delayCs = 6;
 };
+
+// 48px file icon for the drag ghost. mspaint.exe нет на части систем
+// (Store-заглушка) — пробуем несколько путей, в крайнем случае системная.
+// Возвращает иконку и флаг владения (shared нельзя DestroyIcon).
+static HICON GhostIcon(const wchar_t* path, bool& owned)
+{
+    owned = false;
+    const wchar_t* cands[3] = {
+        path,
+        L"C:\\Windows\\System32\\notepad.exe",
+        L"C:\\Windows\\explorer.exe",
+    };
+    for (auto c : cands)
+    {
+        SHFILEINFOW sfi = {};
+        if (SHGetFileInfoW(c, 0, &sfi, sizeof(sfi),
+                SHGFI_ICON | SHGFI_LARGEICON) && sfi.hIcon)
+        {
+            owned = true;
+            return sfi.hIcon;
+        }
+    }
+    return LoadIconW(nullptr, IDI_APPLICATION); // shared
+}
 
 static GroupData MkGroup(const wchar_t* name, int grid,
     const std::vector<std::pair<const wchar_t*, const wchar_t*>>& apps,
@@ -187,6 +217,13 @@ int wmain(int argc, wchar_t** argv)
         { L"Console", L"C:\\Windows\\System32\\cmd.exe" },
         { L"Explorer", L"C:\\Windows\\explorer.exe" },
     });
+    GroupData gDemo5 = MkGroup(L"Demo", 2, {
+        { L"Notepad", L"C:\\Windows\\System32\\notepad.exe" },
+        { L"Paint", L"C:\\Windows\\System32\\mspaint.exe" },
+        { L"Console", L"C:\\Windows\\System32\\cmd.exe" },
+        { L"Explorer", L"C:\\Windows\\explorer.exe" },
+        { L"Registry", L"C:\\Windows\\System32\\regedit.exe" },
+    });
     GroupData gTall = MkGroup(L"Tools", 2, {
         { L"Notepad", L"C:\\Windows\\System32\\notepad.exe" },
         { L"Paint", L"C:\\Windows\\System32\\mspaint.exe" },
@@ -242,6 +279,10 @@ int wmain(int argc, wchar_t** argv)
         return b.hBitmap;
     };
     HBITMAP wPlain = keep(r.RenderWidget(gDemo, ctx, 0, false));
+    HBITMAP w5plain = keep(r.RenderWidget(gDemo5, ctx, 0, false));
+    bool ghostOwned = false;
+    HICON hGhost = GhostIcon(L"C:\\Windows\\System32\\mspaint.exe", ghostOwned);
+    wprintf(L"hGhost=%p owned=%d\n", hGhost, (int)ghostOwned);
     HBITMAP wG1 = keep(r.RenderWidget(gDemo, ctx, 90, false));
     HBITMAP wG2 = keep(r.RenderWidget(gDemo, ctx, 175, false));
     HBITMAP wGlow = keep(r.RenderWidget(gDemo, ctx, 255, false));
@@ -347,6 +388,17 @@ int wmain(int argc, wchar_t** argv)
         keys.push_back(k);
     };
     auto W = [&](HBITMAP w, int d) { K(w, nullptr, false, 0, 0, d); };
+    auto WMv = [&](HBITMAP w, int dx, int dy, int d) {
+        Key k;
+        k.widget = w; k.widgetDx = dx; k.widgetDy = dy; k.delayCs = d;
+        keys.push_back(k);
+    };
+    auto G = [&](HBITMAP w, int gx, int gy, int d) {
+        Key k;
+        k.widget = w; k.ghost = true; k.ghostX = gx; k.ghostY = gy;
+        k.delayCs = d;
+        keys.push_back(k);
+    };
     auto P = [&](HBITMAP w, HBITMAP p, int dx, BYTE a, int d) {
         K(w, p, false, dx, a, d);
     };
@@ -369,6 +421,27 @@ int wmain(int argc, wchar_t** argv)
     P(wPlain, pbHov[1], 0, 255, 50);
     P(wPlain, pbHov[2], 0, 255, 50);
     P(wPlain, pbHov[3], 0, 255, 300);
+    // 3b. Drag-and-drop файла на виджет: иконка летит, виджет вспыхивает,
+    // ярлык добавляется (+1 к счётчику).
+    {
+        int gx0 = CW - 110, gy0 = wy - 60;
+        int gx1 = wx + 14, gy1 = wy + 14;
+        G(wPlain, gx0, gy0, 60);
+        for (int s = 1; s <= 5; s++)
+        {
+            int gx = gx0 + (gx1 - gx0) * s / 5;
+            int gy = gy0 + (gy1 - gy0) * s / 5;
+            G(s == 5 ? wGlow : wPlain, gx, gy, 5);
+        }
+        W(w5plain, 200); // группа обновилась: 5 ярлыков, бейдж +1
+    }
+    // 3c. Перетаскивание самого виджета на новое место и обратно.
+    WMv(w5plain, 20, 8, 5);
+    WMv(w5plain, 40, 16, 5);
+    WMv(w5plain, 60, 24, 40);
+    WMv(w5plain, 40, 16, 5);
+    WMv(w5plain, 20, 8, 5);
+    WMv(w5plain, 0, 0, 40);
     // 4. Tall popup scrolls down and back.
     P(wTall, pbT0, 0, 255, 350);
     P(wTall, pbT1, 0, 255, 40);
@@ -450,7 +523,8 @@ int wmain(int argc, wchar_t** argv)
         {
             int w = 0, h = 0;
             BitmapSize(k.widget, w, h);
-            AlphaBlit(hdcM, wx, (CH - h) / 2, w, h, k.widget, 255);
+            AlphaBlit(hdcM, wx + k.widgetDx, (CH - h) / 2 + k.widgetDy,
+                w, h, k.widget, 255);
         }
         if (k.overlay)
         {
@@ -461,6 +535,8 @@ int wmain(int argc, wchar_t** argv)
             int oy = (CH - h) / 2;
             AlphaBlit(hdcM, ox, oy, w, h, k.overlay, k.overlayAlpha);
         }
+        if (k.ghost && hGhost)
+            DrawIconEx(hdcM, k.ghostX, k.ghostY, hGhost, 48, 48, 0, nullptr, DI_NORMAL);
         SelectObject(hdcM, hOld);
         DeleteDC(hdcM);
         ReleaseDC(nullptr, hdcS);
@@ -537,6 +613,7 @@ int wmain(int argc, wchar_t** argv)
     }
 
     for (HBITMAP b : owned) DeleteObject(b);
+    if (hGhost && ghostOwned) DestroyIcon(hGhost);
     r.Shutdown();
     Gdiplus::GdiplusShutdown(gdiToken);
     if (SUCCEEDED(hrCo) || hrCo == S_FALSE) CoUninitialize();

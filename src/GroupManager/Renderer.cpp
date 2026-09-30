@@ -1013,8 +1013,9 @@ RenderedBitmap WidgetRenderer::RenderWidget(const GroupData& group,
         }
         if (overflow)
         {
+            // Скрытых ярлыков: всего минус видимые в сетке.
             WCHAR cnt[16];
-            swprintf_s(cnt, L"+%d", count - slots + 1);
+            swprintf_s(cnt, L"+%d", count - slots);
             if (!label.empty()) label += L" ";
             label += cnt;
         }
