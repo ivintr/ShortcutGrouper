@@ -55,31 +55,49 @@ static void RegSetDword(const wchar_t* valueName, DWORD v)
     Reg::SetDwordAt(HKEY_CURRENT_USER, REG_APP, valueName, v);
 }
 
+// In-memory кэш горячих настроек: IsShowOverflow дёргается на каждый кадр
+// каждого виджета, остальные — на каждый драг; реестр читаем один раз,
+// дальше из памяти. Всё использование — в UI-потоке, синхронизация не нужна.
+static DWORD s_snap = 2;   // 2 = не загружено
+static DWORD s_prune = 2;
+static DWORD s_grid = 0;   // 0 = не загружено
+static DWORD s_overflow = 2;
+
 bool Settings::IsSnapToGrid()
 {
-    return RegGetDword(L"SnapToGrid", 0) != 0;
+    if (s_snap > 1)
+        s_snap = RegGetDword(L"SnapToGrid", 0);
+    return s_snap != 0;
 }
 
 void Settings::SetSnapToGrid(bool enable)
 {
     RegSetDword(L"SnapToGrid", enable ? 1 : 0);
+    s_snap = enable ? 1 : 0;
 }
 
 bool Settings::IsAutoPruneDead()
 {
-    return RegGetDword(L"AutoPruneDead", 1) != 0;
+    if (s_prune > 1)
+        s_prune = RegGetDword(L"AutoPruneDead", 1);
+    return s_prune != 0;
 }
 
 void Settings::SetAutoPruneDead(bool enable)
 {
     RegSetDword(L"AutoPruneDead", enable ? 1 : 0);
+    s_prune = enable ? 1 : 0;
 }
 
 int Settings::GetDefaultGrid()
 {
-    int v = (int)RegGetDword(L"DefaultGrid", 2);
-    if (v < 2 || v > 3) v = 2;
-    return v;
+    if (s_grid == 0)
+    {
+        int v = (int)RegGetDword(L"DefaultGrid", 2);
+        if (v < 2 || v > 3) v = 2;
+        s_grid = (DWORD)v;
+    }
+    return (int)s_grid;
 }
 
 void Settings::SetDefaultGrid(int grid)
@@ -87,6 +105,7 @@ void Settings::SetDefaultGrid(int grid)
     if (grid < 2) grid = 2;
     if (grid > 3) grid = 3;
     RegSetDword(L"DefaultGrid", (DWORD)grid);
+    s_grid = (DWORD)grid;
 }
 
 DWORD Settings::PackHotkey(UINT mods, UINT vk)
@@ -124,12 +143,15 @@ void Settings::SetHotkeyToggle(DWORD hotkey)
 
 bool Settings::IsShowOverflow()
 {
-    return RegGetDword(L"ShowOverflow", 1) != 0;
+    if (s_overflow > 1)
+        s_overflow = RegGetDword(L"ShowOverflow", 1);
+    return s_overflow != 0;
 }
 
 void Settings::SetShowOverflow(bool enable)
 {
     RegSetDword(L"ShowOverflow", enable ? 1 : 0);
+    s_overflow = enable ? 1 : 0;
 }
 
 bool Settings::ConsumeFirstRun()

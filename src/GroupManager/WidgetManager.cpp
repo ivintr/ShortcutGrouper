@@ -77,21 +77,34 @@ static std::string ToA(const std::wstring& w)
 
 std::wstring WidgetManager::GetGroupsDir()
 {
+    // Пути и каталоги резолвим один раз: раньше CreateDirectoryW дёргался
+    // на каждый вызов (в т.ч. каждый тик перетаскивания виджета).
+    static std::wstring cached;
+    static bool ready = false;
+    if (ready)
+        return cached;
     std::wstring base = GetRoamingAppData();
     if (base.empty()) return {};
     CreateDirectoryW((base + L"\\DesktopGroupManager").c_str(), nullptr);
-    std::wstring dir = base + L"\\DesktopGroupManager\\Groups";
-    CreateDirectoryW(dir.c_str(), nullptr);
-    return dir;
+    cached = base + L"\\DesktopGroupManager\\Groups";
+    CreateDirectoryW(cached.c_str(), nullptr);
+    ready = true;
+    return cached;
 }
 
 std::wstring WidgetManager::GetJsonPath()
 {
+    static std::wstring cached;
+    static bool ready = false;
+    if (ready)
+        return cached;
     std::wstring base = GetRoamingAppData();
     if (base.empty()) return {};
     std::wstring dir = base + L"\\DesktopGroupManager";
     CreateDirectoryW(dir.c_str(), nullptr);
-    return dir + L"\\groups.json";
+    cached = dir + L"\\groups.json";
+    ready = true;
+    return cached;
 }
 
 // ---------------------------------------------------------------------------

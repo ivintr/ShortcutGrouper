@@ -305,6 +305,13 @@ static LRESULT CALLBACK MarqueeWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
     case WM_APP_MQ_MOVE:
     {
         if (!s_mqEmptyDown) return 0;
+        // Схлопываем очередь движений: при быстром ведении мыши хук шлёт
+        // сотни MOVE, обрабатываем только самое свежее положение, иначе
+        // перерисовка и хит-тесты отстают от курсора.
+        POINT pt = PointFromLParam(lParam);
+        MSG coalesce = {};
+        while (PeekMessageW(&coalesce, hWnd, WM_APP_MQ_MOVE, WM_APP_MQ_MOVE, PM_REMOVE))
+            pt = PointFromLParam(coalesce.lParam);
         // Рассинхрон с физической кнопкой (UP потерян — хук сняли/лаг):
         // иначе фантомная рамка ездит за курсором без зажатой кнопки.
         if (!(GetAsyncKeyState(VK_LBUTTON) & 0x8000))
@@ -318,7 +325,7 @@ static LRESULT CALLBACK MarqueeWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
             }
             return 0;
         }
-        POINT pt = PointFromLParam(lParam);
+        // pt уже взят выше (схлопнутый из очереди).
         // За пределы стола/наших окон рамку не тянем — замораживаем:
         // иначе при перетаскивании она рисуется поверх проводника.
         if (!PointInOurWindows(pt) && !PointOnDesktopEmpty(pt))
