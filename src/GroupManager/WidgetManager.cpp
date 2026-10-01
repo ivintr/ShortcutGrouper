@@ -141,18 +141,12 @@ void WidgetManager::Shutdown()
 // JSON
 // ---------------------------------------------------------------------------
 
-void WidgetManager::LoadGroups()
+static bool ParseGroupsStream(std::istream& in, std::vector<GroupData>& out)
 {
-    m_groups.clear();
-
-    std::wstring path = GetJsonPath();
-    std::ifstream in(path);
-    if (!in.is_open()) return;
-
     try
     {
         json root = json::parse(in);
-        if (!root.contains("groups") || !root["groups"].is_array()) return;
+        if (!root.contains("groups") || !root["groups"].is_array()) return false;
 
         for (const auto& jg : root["groups"])
         {
@@ -185,10 +179,43 @@ void WidgetManager::LoadGroups()
             }
 
             if (!g.id.empty())
-                m_groups.push_back(std::move(g));
+                out.push_back(std::move(g));
         }
     }
-    catch (const json::exception&) {}
+    catch (const json::exception&) { return false; }
+    return true;
+}
+
+void WidgetManager::LoadGroups()
+{
+    m_groups.clear();
+
+    std::wstring path = GetJsonPath();
+    if (path.empty()) return;
+    std::wstring bak = path + L".bak";
+
+    {
+        std::ifstream in(path, std::ios::binary);
+        if (in.is_open() && ParseGroupsStream(in, m_groups))
+        {
+            // Удачная загрузка — обновляем бэкап последней хорошей копии.
+            CopyFileW(path.c_str(), bak.c_str(), FALSE);
+            return;
+        }
+    }
+    // Основной файл бит (упали посреди сейва, рука в JSON) — пробуем бэкап.
+    WL(L"LoadGroups: main JSON broken, trying backup");
+    {
+        std::ifstream in(bak, std::ios::binary);
+        if (in.is_open() && ParseGroupsStream(in, m_groups))
+        {
+            WL(L"LoadGroups: restored from backup");
+            NotifyBalloon(Lang::Get(Str::W_PrunedTitle),
+                Lang::Get(Str::W_RestoredMsg));
+            return;
+        }
+    }
+    WL(L"LoadGroups: starting empty");
 }
 
 void WidgetManager::SaveGroups()
@@ -229,9 +256,37 @@ void WidgetManager::SaveGroups()
     root["groups"] = jArr;
 
     std::wstring path = GetJsonPath();
-    std::ofstream out(path);
-    if (out.is_open())
+    if (path.empty()) return;
+    // Атомарный сейв: пишем во временный файл со сбросом на диск, затем
+    // атомарно переименовываем. Падение/обесточивание посреди записи больше
+    // не оставляет обрезанный groups.json (= потеря всех групп при старте).
+    std::wstring tmp = path + L".tmp";
+    {
+        std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
+        if (!out.is_open())
+            return;
         out << root.dump(4);
+        out.flush();
+        if (!out)
+        {
+            out.close();
+            DeleteFileW(tmp.c_str());
+            return;
+        }
+        HANDLE h = CreateFileW(tmp.c_str(), GENERIC_READ, FILE_SHARE_READ,
+            nullptr, OPEN_EXISTING, 0, nullptr);
+        if (h != INVALID_HANDLE_VALUE)
+        {
+            FlushFileBuffers(h);
+            CloseHandle(h);
+        }
+        out.close();
+    }
+    if (!MoveFileExW(tmp.c_str(), path.c_str(),
+            MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+    {
+        DeleteFileW(tmp.c_str());
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -442,17 +497,46 @@ static bool IsSteamGameInstalled(DWORD appId)
 std::wstring WidgetManager::MoveLnkToStorage(const std::wstring& lnkPath, const std::wstring& groupId)
 {
     std::wstring groupsDir = GetGroupsDir();
+    if (groupsDir.empty()) return {}; // некуда класть — вызыватель оставит оригинал
     std::wstring groupDir = groupsDir + L"\\" + groupId;
     CreateDirectoryW(groupDir.c_str(), nullptr);
 
     PCWSTR fname = PathFindFileNameW(lnkPath.c_str());
+    if (!fname || !*fname) return {};
     std::wstring dst = groupDir + L"\\" + fname;
+
+    // Коллизия имён (два «Chrome.lnk» с разных столов): без суффикса второй
+    // молча не сохранялся (MoveFileW/CopyFileW с FALSE не перезаписывают).
+    if (GetFileAttributesW(dst.c_str()) != INVALID_FILE_ATTRIBUTES)
+    {
+        std::wstring stem = fname, ext;
+        size_t dot = stem.find_last_of(L'.');
+        if (dot != std::wstring::npos && dot > 0)
+        {
+            ext = stem.substr(dot);
+            stem.resize(dot);
+        }
+        for (int i = 2; i < 1000; i++)
+        {
+            WCHAR cand[MAX_PATH];
+            if (swprintf_s(cand, L"%s (%d)%s", stem.c_str(), i, ext.c_str()) < 0)
+                return {};
+            dst = groupDir + L"\\" + cand;
+            if (GetFileAttributesW(dst.c_str()) == INVALID_FILE_ATTRIBUTES)
+                break;
+            if (i == 999) return {};
+        }
+    }
 
     if (MoveFileW(lnkPath.c_str(), dst.c_str()))
         return dst;
 
-    if (CopyFileW(lnkPath.c_str(), dst.c_str(), FALSE))
+    if (CopyFileW(lnkPath.c_str(), dst.c_str(), TRUE))
+    {
+        // Кросс-томное перемещение: копия удалась — стираем оригинал.
+        DeleteFileW(lnkPath.c_str());
         return dst;
+    }
 
     return {};
 }

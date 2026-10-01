@@ -107,6 +107,7 @@ const wchar_t* Lang::Russian(Str id)
     case Str::W_PrunedTitle:       return L"Группа убрана со стола";
     case Str::W_PrunedMsg:         return L"«%s»: все ярлыки битые, группа удалена.";
     case Str::W_PrunedMany:        return L"Убрано битых ярлыков: %d (пустые группы удалены).";
+    case Str::W_RestoredMsg:      return L"Файл групп был повреждён — данные восстановлены из резервной копии.";
     case Str::W_RenameError:      return L"Не удалось переименовать файл.";
     case Str::W_ErrorCaption:     return L"Ошибка";
     case Str::W_CmdCut:     return L"Вырезать";
@@ -225,6 +226,7 @@ const wchar_t* Lang::English(Str id)
     case Str::W_PrunedTitle:       return L"Group removed from desktop";
     case Str::W_PrunedMsg:         return L"“%s”: all shortcuts are broken, the group was removed.";
     case Str::W_PrunedMany:        return L"Removed %d dead shortcuts (empty groups deleted).";
+    case Str::W_RestoredMsg:      return L"The groups file was corrupted — data was restored from backup.";
     case Str::W_RenameError:      return L"Failed to rename the file.";
     case Str::W_ErrorCaption:     return L"Error";
     case Str::W_CmdCut:     return L"Cut";

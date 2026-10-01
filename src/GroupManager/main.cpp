@@ -96,8 +96,11 @@ static LRESULT CALLBACK IpcWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
         COPYDATASTRUCT* cds = (COPYDATASTRUCT*)lParam;
         // Валидируем чужой буфер ДО чтения: проверяем размер и наличие
         // терминатора внутри cbData, иначе читаем чужую память.
+        // Лимит 256 КБ: командная строка всё равно ограничена ~32К символов,
+        // а безлимитное копирование — лёгкий DoS через чужой SendMessage.
         if (cds && cds->dwData == 1 && cds->lpData &&
-            cds->cbData >= sizeof(wchar_t))
+            cds->cbData >= sizeof(wchar_t) &&
+            cds->cbData <= 256 * 1024)
         {
             size_t maxChars = cds->cbData / sizeof(wchar_t);
             const wchar_t* src = (const wchar_t*)cds->lpData;

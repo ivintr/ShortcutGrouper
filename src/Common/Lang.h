@@ -48,6 +48,7 @@ enum class Str
     W_PrunedTitle,
     W_PrunedMsg,        // %s — имя группы
     W_PrunedMany,       // %d — число ярлыков
+    W_RestoredMsg,      // группы восстановлены из бэкапа
     W_RenameError,
     W_ErrorCaption,
     W_CmdCut,
